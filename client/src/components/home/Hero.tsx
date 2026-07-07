@@ -1,7 +1,7 @@
 function Hero() {
   return (
-    <section className="bg-orange-50 px-8 py-28 text-center">
-      <h1 className="text-5xl font-bold leading-tight md:text-6xl">
+    <section className="bg-orange-50 px-6 py-20 text-center md:px-8 md:py-28">
+      <h1 className="text-4xl font-bold leading-tight md:text-6xl">
         Delicious Food
         <span className="text-orange-500"> Delivered</span>
         <br />

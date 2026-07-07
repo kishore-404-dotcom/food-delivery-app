@@ -40,7 +40,7 @@ function FoodGrid() {
         Popular Foods
       </h2>
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {foods.map((food) => (
           <div
             key={food.id}
@@ -49,7 +49,7 @@ function FoodGrid() {
             <img
               src={food.image}
               alt={food.name}
-              className="h-48 w-full object-cover"
+              className="h-56 w-full object-cover"
             />
 
             <div className="p-4">

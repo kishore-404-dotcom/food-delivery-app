@@ -1,14 +1,14 @@
 function SearchBar() {
   return (
-    <section className="mt-10 flex justify-center px-4">
-      <div className="flex w-full max-w-xl rounded-full border border-gray-300 bg-white p-2 shadow-md">
+    <section className="mx-auto -mt-10 w-full max-w-3xl px-4">
+      <div className="flex flex-col gap-4 rounded-2xl bg-white p-4 shadow-lg sm:flex-row">
         <input
           type="text"
           placeholder="Search your favourite food..."
-          className="flex-1 rounded-full px-4 py-2 outline-none"
+          className="flex-1 rounded-xl border px-5 py-4 outline-none"
         />
 
-        <button className="rounded-full bg-orange-500 px-6 py-2 font-semibold text-white hover:bg-orange-600">
+        <button className="rounded-xl bg-orange-500 px-8 py-4 font-semibold text-white hover:bg-orange-600">
           Search
         </button>
       </div>

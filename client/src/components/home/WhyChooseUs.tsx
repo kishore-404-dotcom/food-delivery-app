@@ -7,7 +7,7 @@ function WhyChooseUs() {
         Why Choose Foodie?
       </h2>
 
-      <div className="grid gap-8 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
         <div className="rounded-xl bg-white p-8 text-center shadow-md">
           <FaShippingFast className="mx-auto text-5xl text-orange-500" />
           <h3 className="mt-4 text-2xl font-semibold">Fast Delivery</h3>

@@ -9,12 +9,12 @@ const categories = [
 
 function Categories() {
   return (
-    <section className="mx-auto mt-16 max-w-6xl px-4">
+    <section className="mx-auto mt-16 max-w-7xl px-4">
       <h2 className="mb-8 text-center text-3xl font-bold">
         Browse Categories
       </h2>
 
-      <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         {categories.map((category) => (
           <div
             key={category}
