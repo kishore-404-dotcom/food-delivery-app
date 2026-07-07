@@ -1,6 +1,6 @@
 function Footer() {
   return (
-    <footer className="mt-20 bg-gray-900 text-white">
+   <footer id="footer" className="mt-20 bg-gray-900 text-white">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 py-10 md:flex-row">
         <div>
           <h2 className="text-3xl font-bold text-orange-500">

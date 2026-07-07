@@ -9,7 +9,7 @@ const categories = [
 
 function Categories() {
   return (
-    <section className="mx-auto mt-16 max-w-7xl px-4">
+    <section id="categories" className="mx-auto mt-16 max-w-7xl px-4">
       <h2 className="mb-8 text-center text-3xl font-bold">
         Browse Categories
       </h2>

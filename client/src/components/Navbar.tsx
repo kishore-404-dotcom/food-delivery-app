@@ -17,9 +17,17 @@ function Navbar() {
         {/* Desktop Navigation */}
         <ul className="hidden items-center gap-8 font-medium md:flex">
           <li><Link to="/">Home</Link></li>
-          <li><Link to="/">Menu</Link></li>
-          <li><Link to="/">About</Link></li>
-          <li><Link to="/">Contact</Link></li>
+          <li>
+            <a href="#categories">Menu</a>
+          </li>
+
+          <li>
+            <a href="#why-us">Why Us</a>
+          </li>
+
+          <li>
+            <a href="#footer">Contact</a>
+          </li>
         </ul>
 
         {/* Desktop Right Side */}
