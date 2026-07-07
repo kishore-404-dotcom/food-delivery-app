@@ -1,31 +1,35 @@
+import burgerImage from "../../assets/images/burger/burger1.jpeg";
+import pizzaImage from "../../assets/images/pizza/pizza1.jpeg";
+import pastaImage from "../../assets/images/pasta/pasta1.jpeg";
+import frenchFriesImage from "../../assets/images/frenchFries/frenchFries1.jpeg";
 const foods = [
   {
     id: 1,
     name: "Chicken Burger",
     description: "Fresh crispy chicken burger with cheese.",
     price: 199,
-    image: "https://placehold.co/400x250",
+    image: burgerImage,
   },
   {
     id: 2,
     name: "Pepperoni Pizza",
     description: "Loaded with cheese and pepperoni.",
     price: 299,
-    image: "https://placehold.co/400x250",
+    image: pizzaImage,
   },
   {
     id: 3,
     name: "Creamy Pasta",
     description: "Rich creamy white sauce pasta.",
     price: 249,
-    image: "https://placehold.co/400x250",
+    image: pastaImage,
   },
   {
     id: 4,
     name: "French Fries",
     description: "Crispy golden potato fries.",
     price: 149,
-    image: "https://placehold.co/400x250",
+    image: frenchFriesImage,
   },
 ];
 
