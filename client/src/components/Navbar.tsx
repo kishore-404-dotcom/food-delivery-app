@@ -5,7 +5,7 @@ function Navbar() {
   return (
     <nav className="sticky top-0 z-50 bg-white shadow-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        
+
         {/* Logo */}
         <Link
           to="/"
@@ -14,34 +14,18 @@ function Navbar() {
           Foodie
         </Link>
 
-        {/* Navigation */}
+        {/* Desktop Navigation */}
         <ul className="hidden items-center gap-8 font-medium md:flex">
-          <li>
-            <Link to="/">Home</Link>
-          </li>
-
-          <li>
-            <Link to="/">Menu</Link>
-          </li>
-
-          <li>
-            <Link to="/">About</Link>
-          </li>
-
-          <li>
-            <Link to="/">Contact</Link>
-          </li>
+          <li><Link to="/">Home</Link></li>
+          <li><Link to="/">Menu</Link></li>
+          <li><Link to="/">About</Link></li>
+          <li><Link to="/">Contact</Link></li>
         </ul>
 
-        {/* Right Side */}
+        {/* Desktop Right Side */}
         <div className="hidden items-center gap-6 md:flex">
-
-          <Link
-            to="/cart"
-            className="relative"
-          >
+          <Link to="/cart" className="relative">
             <FaShoppingCart size={24} />
-
             <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-xs text-white">
               0
             </span>
@@ -53,11 +37,12 @@ function Navbar() {
           >
             Login
           </Link>
-          <button className="text-2xl md:hidden">
-            <FaBars />
-          </button>
-
         </div>
+
+        {/* Mobile Menu Button */}
+        <button className="text-2xl md:hidden">
+          <FaBars />
+        </button>
 
       </div>
     </nav>
