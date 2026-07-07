@@ -3,6 +3,7 @@ import SearchBar from "../../components/home/SearchBar";
 import Categories from "../../components/home/Categories";
 import FoodGrid from "../../components/home/FoodGrid";
 import WhyChooseUs from "../../components/home/WhyChooseUs";
+import Footer from "../../components/Footer";
 
 function Home() {
   return (
@@ -12,6 +13,7 @@ function Home() {
       <Categories />
       <FoodGrid />
       <WhyChooseUs />
+      <Footer />
     </>
   );
 }
