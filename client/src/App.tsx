@@ -8,6 +8,8 @@ import Cart from "./pages/cart/Cart";
 import Profile from "./pages/profile/Profile";
 import NotFound from "./pages/notFound/NotFound";
 
+import Register from "./pages/register/Register";
+
 function App() {
   return (
     <>
@@ -16,9 +18,12 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="*" element={<NotFound />} />
+
+        <Route path="/register" element={<Register />} />
       </Routes>
     </>
   );
