@@ -1,5 +1,8 @@
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { ClipLoader } from "react-spinners";
+import { useState } from "react";
 
 type LoginForm = {
   email: string;
@@ -13,8 +16,20 @@ function Login() {
     formState: { errors },
   } = useForm<LoginForm>();
 
-  const onSubmit = (data: LoginForm) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const onSubmit = async (data: LoginForm) => {
+    setLoading(true);
+
     console.log(data);
+
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    setLoading(false);
+
+    alert("Login Successful!");
   };
 
   return (
@@ -28,6 +43,7 @@ function Login() {
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-5"
         >
+          {/* Email */}
           <div>
             <label className="mb-2 block font-medium">
               Email
@@ -53,23 +69,34 @@ function Login() {
             )}
           </div>
 
+          {/* Password */}
           <div>
             <label className="mb-2 block font-medium">
               Password
             </label>
 
-            <input
-              type="password"
-              placeholder="Enter your password"
-              {...register("password", {
-                required: "Password is required",
-                minLength: {
-                  value: 6,
-                  message: "Minimum 6 characters",
-                },
-              })}
-              className="w-full rounded-lg border px-4 py-3 outline-none focus:border-orange-500"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                {...register("password", {
+                  required: "Password is required",
+                  minLength: {
+                    value: 6,
+                    message: "Minimum 6 characters",
+                  },
+                })}
+                className="w-full rounded-lg border px-4 py-3 pr-12 outline-none focus:border-orange-500"
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-orange-500"
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
 
             {errors.password && (
               <p className="mt-1 text-sm text-red-500">
@@ -78,11 +105,20 @@ function Login() {
             )}
           </div>
 
+          {/* Login Button */}
           <button
             type="submit"
-            className="w-full rounded-lg bg-orange-500 py-3 font-semibold text-white hover:bg-orange-600"
+            disabled={loading}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 py-3 font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-gray-400"
           >
-            Login
+            {loading && (
+              <ClipLoader
+                color="#ffffff"
+                size={18}
+              />
+            )}
+
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
@@ -90,7 +126,7 @@ function Login() {
           Don't have an account?{" "}
           <Link
             to="/register"
-            className="font-semibold text-orange-500"
+            className="font-semibold text-orange-500 hover:underline"
           >
             Register
           </Link>
