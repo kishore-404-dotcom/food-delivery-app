@@ -1,5 +1,5 @@
+import { FaShoppingCart, FaBars } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import { FaShoppingCart } from "react-icons/fa";
 
 function Navbar() {
   return (
@@ -15,7 +15,7 @@ function Navbar() {
         </Link>
 
         {/* Navigation */}
-        <ul className="flex items-center gap-8 font-medium">
+        <ul className="hidden items-center gap-8 font-medium md:flex">
           <li>
             <Link to="/">Home</Link>
           </li>
@@ -34,7 +34,7 @@ function Navbar() {
         </ul>
 
         {/* Right Side */}
-        <div className="flex items-center gap-6">
+        <div className="hidden items-center gap-6 md:flex">
 
           <Link
             to="/cart"
@@ -53,6 +53,9 @@ function Navbar() {
           >
             Login
           </Link>
+          <button className="text-2xl md:hidden">
+            <FaBars />
+          </button>
 
         </div>
 
