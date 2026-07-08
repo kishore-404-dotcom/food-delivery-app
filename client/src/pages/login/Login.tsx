@@ -2,7 +2,8 @@ import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { ClipLoader } from "react-spinners";
-import { useState } from "react";
+import { toast } from "react-toastify";
+import { useState, useRef, useEffect } from "react";
 
 type LoginForm = {
   email: string;
@@ -18,6 +19,13 @@ function Login() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const onSubmit = async (data: LoginForm) => {
     setLoading(true);
@@ -27,9 +35,12 @@ function Login() {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
+    // Only update state if component is still mounted
+    if (!isMounted.current) return;
+
     setLoading(false);
 
-    alert("Login Successful!");
+    toast.success("Login Successful!");
   };
 
   return (
