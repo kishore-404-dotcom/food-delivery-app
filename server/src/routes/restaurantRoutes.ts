@@ -1,0 +1,77 @@
+import express from "express";
+
+import {
+  createRestaurant,
+  getAllRestaurants,
+  searchRestaurants,
+  getRestaurantsByCategory,
+  getRestaurantById,
+  updateRestaurant,
+  updateRestaurantImage,
+  deleteRestaurant,
+} from "../controllers/restaurantController";
+
+import {
+  protect,
+  adminOnly,
+} from "../middleware/authMiddleware";
+
+import upload from "../middleware/uploadMiddleware";
+
+import validateRequest from "../middleware/validateRequest";
+import { RestaurantValidator } from "../validators/restaurantValidator";
+
+const router = express.Router();
+
+// Create restaurant
+router.post(
+  "/",
+  protect,
+  adminOnly,
+  upload.single("image"),
+  RestaurantValidator,
+  validateRequest,
+  createRestaurant
+);
+
+// Get all restaurants
+router.get("/", getAllRestaurants);
+
+// Search restaurants
+router.get("/search", searchRestaurants);
+
+// Get restaurants by category
+router.get(
+  "/category/:category",
+  getRestaurantsByCategory
+);
+
+// Get restaurant by ID
+router.get("/:id", getRestaurantById);
+
+// Update restaurant details
+router.put(
+  "/:id",
+  protect,
+  adminOnly,
+  updateRestaurant
+);
+
+// Update restaurant image
+router.put(
+  "/:id/image",
+  protect,
+  adminOnly,
+  upload.single("image"),
+  updateRestaurantImage
+);
+
+// Delete restaurant
+router.delete(
+  "/:id",
+  protect,
+  adminOnly,
+  deleteRestaurant
+);
+
+export default router;

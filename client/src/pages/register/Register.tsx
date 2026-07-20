@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { ClipLoader } from "react-spinners";
+import { toast } from "react-toastify";
 
 type RegisterForm = {
   fullName: string;
@@ -23,6 +24,14 @@ function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   const password = watch("password");
 
   const onSubmit = async (data: RegisterForm) => {
@@ -30,17 +39,20 @@ function Register() {
 
     console.log(data);
 
+    // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // Prevent state update if component unmounted
+    if (!isMounted.current) return;
 
     setLoading(false);
 
-    alert("Registration Successful!");
+    toast.success("Registration Successful!");
   };
 
   return (
     <section className="flex min-h-[calc(100vh-80px)] items-center justify-center bg-orange-50 px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
-
         <h1 className="mb-6 text-center text-3xl font-bold">
           Create Account
         </h1>
@@ -56,11 +68,12 @@ function Register() {
             </label>
 
             <input
+              type="text"
+              placeholder="Enter your full name"
               {...register("fullName", {
                 required: "Full name is required",
               })}
-              className="w-full rounded-lg border px-4 py-3"
-              placeholder="Enter your full name"
+              className="w-full rounded-lg border px-4 py-3 outline-none focus:border-orange-500"
             />
 
             {errors.fullName && (
@@ -78,6 +91,7 @@ function Register() {
 
             <input
               type="email"
+              placeholder="Enter your email"
               {...register("email", {
                 required: "Email is required",
                 pattern: {
@@ -85,8 +99,7 @@ function Register() {
                   message: "Enter a valid email",
                 },
               })}
-              className="w-full rounded-lg border px-4 py-3"
-              placeholder="Enter your email"
+              className="w-full rounded-lg border px-4 py-3 outline-none focus:border-orange-500"
             />
 
             {errors.email && (
@@ -105,6 +118,7 @@ function Register() {
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
+                placeholder="Enter password"
                 {...register("password", {
                   required: "Password is required",
                   minLength: {
@@ -112,14 +126,13 @@ function Register() {
                     message: "Minimum 6 characters",
                   },
                 })}
-                className="w-full rounded-lg border px-4 py-3 pr-12"
-                placeholder="Enter password"
+                className="w-full rounded-lg border px-4 py-3 pr-12 outline-none focus:border-orange-500"
               />
 
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-orange-500"
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
@@ -141,13 +154,13 @@ function Register() {
             <div className="relative">
               <input
                 type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm password"
                 {...register("confirmPassword", {
                   required: "Confirm your password",
                   validate: (value) =>
                     value === password || "Passwords do not match",
                 })}
-                className="w-full rounded-lg border px-4 py-3 pr-12"
-                placeholder="Confirm password"
+                className="w-full rounded-lg border px-4 py-3 pr-12 outline-none focus:border-orange-500"
               />
 
               <button
@@ -155,7 +168,7 @@ function Register() {
                 onClick={() =>
                   setShowConfirmPassword(!showConfirmPassword)
                 }
-                className="absolute right-4 top-1/2 -translate-y-1/2"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-orange-500"
               >
                 {showConfirmPassword ? (
                   <FaEyeSlash />
@@ -172,13 +185,17 @@ function Register() {
             )}
           </div>
 
+          {/* Register Button */}
           <button
             type="submit"
             disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 py-3 font-semibold text-white disabled:bg-gray-400"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 py-3 font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-gray-400"
           >
             {loading && (
-              <AiOutlineLoading3Quarters className="animate-spin" />
+              <ClipLoader
+                color="#ffffff"
+                size={18}
+              />
             )}
 
             {loading ? "Creating Account..." : "Register"}
@@ -189,12 +206,11 @@ function Register() {
           Already have an account?{" "}
           <Link
             to="/login"
-            className="font-semibold text-orange-500"
+            className="font-semibold text-orange-500 hover:underline"
           >
             Login
           </Link>
         </p>
-
       </div>
     </section>
   );

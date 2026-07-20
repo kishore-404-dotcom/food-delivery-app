@@ -1,0 +1,86 @@
+import express from "express";
+import cors from "cors";
+
+import authRoutes from "./routes/authRoutes";
+import restaurantRoutes from "./routes/restaurantRoutes";
+import adminRoutes from "./routes/adminRoutes";
+
+import foodRoutes from "./routes/foodRoutes";
+import cartRoutes from "./routes/cartRoutes";
+import orderRoutes from "./routes/orderRoutes";
+import errorMiddleware from "./middleware/errorMiddleware";
+
+import paymentRoutes from "./routes/paymentRoutes";
+
+import reviewRoutes from "./routes/reviewRoutes";
+
+import addressRoutes from "./routes/addressRoutes";
+
+import couponRoutes from "./routes/couponRoutes";
+
+import notificationRoutes from "./routes/notificationRoutes";
+
+import wishlistRoutes from "./routes/wishlistRoutes";
+
+import { apiLimiter } from "./middleware/rateLimiter";
+
+import requestLogger from "./middleware/requestLogger";
+const app = express();
+
+import {
+  swaggerUi,
+  swaggerSpec,
+} from "./config/swagger";
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(requestLogger);
+app.use(apiLimiter);
+
+// Test Route
+app.get("/", (req, res) => {
+  res.send("🚀 Food Delivery API is running...");
+});
+
+// Auth Routes
+app.use("/api/auth", authRoutes);
+
+app.use("/api/admin", adminRoutes);
+
+// Restaurant Routes
+app.use("/api/restaurants", restaurantRoutes);
+
+// Food Routes
+app.use("/api/foods", foodRoutes);
+
+// Cart Routes
+app.use("/api/cart", cartRoutes); 
+
+// Order Routes
+app.use("/api/orders", orderRoutes);
+
+// Error Middleware
+app.use(errorMiddleware);
+
+// Payment Routes
+app.use("/api/payments", paymentRoutes);
+
+// Review Routes
+app.use("/api/reviews", reviewRoutes);
+
+// Address Routes
+app.use("/api/addresses", addressRoutes);
+
+// Coupon Routes
+app.use("/api/coupons", couponRoutes);
+
+// Notification Routes
+app.use("/api/notifications", notificationRoutes);
+
+// Wishlist Routes
+app.use("/api/wishlist", wishlistRoutes);
+
+// Swagger Documentation
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec)); 
+export default app;
