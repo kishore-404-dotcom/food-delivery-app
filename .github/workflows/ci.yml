@@ -1,6 +1,5 @@
 name: Food Delivery Backend CI
 
-
 on:
   push:
     branches:
@@ -12,26 +11,39 @@ on:
 
 
 jobs:
-
   build:
 
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: server
+
+
     steps:
 
+      # Download repository code
       - name: Checkout Repository
         uses: actions/checkout@v4
 
 
-      - name: Setup NodeJS
+      # Install Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
 
+      # Install packages
       - name: Install Dependencies
         run: npm install
 
 
+      # TypeScript build check
+      - name: Build Backend
+        run: npm run build
+
+
+      # Build Docker image
       - name: Build Docker Image
         run: docker compose build
