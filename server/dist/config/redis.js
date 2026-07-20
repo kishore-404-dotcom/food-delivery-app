@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const redis_1 = require("redis");
+const env_1 = require("./env");
+const redisClient = (0, redis_1.createClient)({
+    url: env_1.REDIS_URL,
+});
+redisClient.on("error", (err) => {
+    console.log("Redis Error:", err);
+});
+redisClient.connect();
+exports.default = redisClient;

@@ -34,58 +34,61 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const foodSchema = new mongoose_1.Schema({
-    name: {
+const reviewSchema = new mongoose_1.Schema({
+    user: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+    },
+    food: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: "Food",
+        required: true,
+    },
+    order: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: "Order",
+        required: true,
+    },
+    rating: {
+        type: Number,
+        required: true,
+        min: 1,
+        max: 5,
+    },
+    comment: {
         type: String,
         required: true,
         trim: true,
     },
-    description: {
-        type: String,
-        required: true,
-    },
-    price: {
-        type: Number,
-        required: true,
-    },
-    image: {
-        type: String,
-        default: "",
-    },
-    category: {
-        type: String,
-        required: true,
-    },
-    isAvailable: {
+    isEdited: {
         type: Boolean,
-        default: true,
-    },
-    // Restaurant reference
-    restaurant: {
-        type: mongoose_1.Schema.Types.ObjectId,
-        ref: "Restaurant",
-        required: true,
-    },
-    // Review Statistics
-    averageRating: {
-        type: Number,
-        default: 0,
-        min: 0,
-        max: 5,
-    },
-    totalReviews: {
-        type: Number,
-        default: 0,
-        min: 0,
+        default: false,
     },
 }, {
     timestamps: true,
 });
+// One review per user per food
+reviewSchema.index({
+    user: 1,
+    food: 1,
+}, {
+    unique: true,
+});
 // Indexes
-foodSchema.index({ name: "text" });
-foodSchema.index({ category: 1 });
-foodSchema.index({ restaurant: 1 });
-foodSchema.index({ averageRating: -1 });
-foodSchema.index({ price: 1 });
-foodSchema.index({ createdAt: -1 });
-exports.default = mongoose_1.default.model("Food", foodSchema);
+reviewSchema.index({
+    food: 1,
+});
+reviewSchema.index({
+    user: 1,
+});
+reviewSchema.index({
+    order: 1,
+});
+reviewSchema.index({
+    rating: -1,
+});
+reviewSchema.index({
+    createdAt: -1,
+});
+exports.default = mongoose_1.default.model("Review", reviewSchema);

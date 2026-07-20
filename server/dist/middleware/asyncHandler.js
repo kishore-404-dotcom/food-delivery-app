@@ -1,9 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// Wrap async route handlers
+// Wrap async route handlers with preserved request generics
 const asyncHandler = (fn) => {
-    return (req, res, next) => {
-        Promise.resolve(fn(req, res, next)).catch(next);
-    };
+    return ((...args) => {
+        const next = args[args.length - 1];
+        Promise.resolve(fn(...args)).catch(next);
+    });
 };
 exports.default = asyncHandler;

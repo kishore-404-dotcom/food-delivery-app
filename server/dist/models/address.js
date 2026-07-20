@@ -34,58 +34,90 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const foodSchema = new mongoose_1.Schema({
-    name: {
+const addressSchema = new mongoose_1.Schema({
+    user: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+    },
+    fullName: {
         type: String,
         required: true,
         trim: true,
     },
-    description: {
+    phone: {
         type: String,
         required: true,
+        trim: true,
     },
-    price: {
-        type: Number,
+    addressLine1: {
+        type: String,
         required: true,
+        trim: true,
     },
-    image: {
+    addressLine2: {
         type: String,
         default: "",
+        trim: true,
     },
-    category: {
+    city: {
         type: String,
         required: true,
+        trim: true,
     },
-    isAvailable: {
-        type: Boolean,
-        default: true,
-    },
-    // Restaurant reference
-    restaurant: {
-        type: mongoose_1.Schema.Types.ObjectId,
-        ref: "Restaurant",
+    state: {
+        type: String,
         required: true,
+        trim: true,
     },
-    // Review Statistics
-    averageRating: {
-        type: Number,
-        default: 0,
-        min: 0,
-        max: 5,
+    postalCode: {
+        type: String,
+        required: true,
+        trim: true,
     },
-    totalReviews: {
-        type: Number,
-        default: 0,
-        min: 0,
+    country: {
+        type: String,
+        default: "India",
+        trim: true,
+    },
+    landmark: {
+        type: String,
+        default: "",
+        trim: true,
+    },
+    addressType: {
+        type: String,
+        enum: [
+            "HOME",
+            "WORK",
+            "OTHER",
+        ],
+        default: "HOME",
+    },
+    isDefault: {
+        type: Boolean,
+        default: false,
     },
 }, {
     timestamps: true,
 });
 // Indexes
-foodSchema.index({ name: "text" });
-foodSchema.index({ category: 1 });
-foodSchema.index({ restaurant: 1 });
-foodSchema.index({ averageRating: -1 });
-foodSchema.index({ price: 1 });
-foodSchema.index({ createdAt: -1 });
-exports.default = mongoose_1.default.model("Food", foodSchema);
+addressSchema.index({
+    user: 1,
+});
+addressSchema.index({
+    city: 1,
+});
+addressSchema.index({
+    state: 1,
+});
+addressSchema.index({
+    postalCode: 1,
+});
+addressSchema.index({
+    isDefault: 1,
+});
+addressSchema.index({
+    createdAt: -1,
+});
+exports.default = mongoose_1.default.model("Address", addressSchema);

@@ -4,44 +4,44 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAllPaymentsService = exports.paymentFailedService = exports.paymentSuccessService = exports.getPaymentByIdService = exports.getMyPaymentsService = exports.createPaymentService = void 0;
+const mongoose_1 = __importDefault(require("mongoose"));
 const cart_1 = __importDefault(require("../models/cart"));
 const order_1 = __importDefault(require("../models/order"));
 const payment_1 = __importDefault(require("../models/payment"));
 const apiError_1 = require("../utils/apiError");
-// Generate Dummy Payment ID
-const generatePaymentId = () => {
-    return `PAY_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
-};
+const paymentProvider_1 = require("../providers/paymentProvider");
+const paymentProvider = new paymentProvider_1.DummyPaymentProvider();
 // Create Payment
 const createPaymentService = async (userId, orderId) => {
-    // Check order
     const order = await order_1.default.findById(orderId);
     if (!order) {
         throw new apiError_1.ApiError(404, "Order not found");
     }
-    // Verify ownership
     if (order.user.toString() !== userId) {
         throw new apiError_1.ApiError(403, "You are not authorized to access this order");
     }
-    // Prevent duplicate payment
+    if (order.paymentStatus === "PAID") {
+        throw new apiError_1.ApiError(400, "Order has already been paid");
+    }
     const existingPayment = await payment_1.default.findOne({
         order: orderId,
     });
     if (existingPayment) {
         throw new apiError_1.ApiError(400, "Payment already exists for this order");
     }
+    const providerPayment = (await paymentProvider.createPayment(order.totalAmount));
     const payment = await payment_1.default.create({
         user: userId,
         order: order._id,
         amount: order.totalAmount,
-        paymentId: generatePaymentId(),
-        paymentMethod: "DUMMY",
+        paymentId: providerPayment.paymentId,
+        paymentMethod: providerPayment.paymentMethod,
         status: "PENDING",
     });
     return payment;
 };
 exports.createPaymentService = createPaymentService;
-// Get Logged-in User Payments
+// Get My Payments
 const getMyPaymentsService = async (userId) => {
     return await payment_1.default.find({
         user: userId,
@@ -54,8 +54,7 @@ const getMyPaymentsService = async (userId) => {
 exports.getMyPaymentsService = getMyPaymentsService;
 // Get Payment By ID
 const getPaymentByIdService = async (paymentId, userId) => {
-    const payment = await payment_1.default.findById(paymentId)
-        .populate("order");
+    const payment = await payment_1.default.findById(paymentId).populate("order");
     if (!payment) {
         throw new apiError_1.ApiError(404, "Payment not found");
     }
@@ -67,54 +66,115 @@ const getPaymentByIdService = async (paymentId, userId) => {
 exports.getPaymentByIdService = getPaymentByIdService;
 // Payment Success
 const paymentSuccessService = async (paymentId) => {
-    const payment = await payment_1.default.findById(paymentId);
-    if (!payment) {
-        throw new apiError_1.ApiError(404, "Payment not found");
-    }
-    if (payment.status === "SUCCESS") {
-        throw new apiError_1.ApiError(400, "Payment already completed");
-    }
-    payment.status = "SUCCESS";
-    await payment.save();
-    const order = await order_1.default.findById(payment.order);
-    if (order) {
+    const session = await mongoose_1.default.startSession();
+    session.startTransaction();
+    try {
+        const payment = await payment_1.default.findById(paymentId).session(session);
+        if (!payment) {
+            throw new apiError_1.ApiError(404, "Payment not found");
+        }
+        if (payment.status === "SUCCESS") {
+            throw new apiError_1.ApiError(400, "Payment already completed");
+        }
+        payment.status = "SUCCESS";
+        await payment.save({
+            session,
+        });
+        const order = await order_1.default.findById(payment.order).session(session);
+        if (!order) {
+            throw new apiError_1.ApiError(404, "Order not found");
+        }
         order.paymentStatus = "PAID";
-        await order.save();
+        order.orderStatus = "CONFIRMED";
+        await order.save({
+            session,
+        });
+        const cart = await cart_1.default.findOne({
+            user: payment.user,
+        }).session(session);
+        if (cart) {
+            cart.items = [];
+            await cart.save({
+                session,
+            });
+        }
+        await session.commitTransaction();
+        return payment;
     }
-    // Clear cart after successful payment
-    const cart = await cart_1.default.findOne({
-        user: payment.user,
-    });
-    if (cart) {
-        cart.items = [];
-        await cart.save();
+    catch (error) {
+        await session.abortTransaction();
+        throw error;
     }
-    return payment;
+    finally {
+        session.endSession();
+    }
 };
 exports.paymentSuccessService = paymentSuccessService;
 // Payment Failed
 const paymentFailedService = async (paymentId) => {
-    const payment = await payment_1.default.findById(paymentId);
-    if (!payment) {
-        throw new apiError_1.ApiError(404, "Payment not found");
-    }
-    payment.status = "FAILED";
-    await payment.save();
-    const order = await order_1.default.findById(payment.order);
-    if (order) {
+    const session = await mongoose_1.default.startSession();
+    session.startTransaction();
+    try {
+        const payment = await payment_1.default.findById(paymentId).session(session);
+        if (!payment) {
+            throw new apiError_1.ApiError(404, "Payment not found");
+        }
+        if (payment.status === "FAILED") {
+            throw new apiError_1.ApiError(400, "Payment already failed");
+        }
+        payment.status = "FAILED";
+        await payment.save({
+            session,
+        });
+        const order = await order_1.default.findById(payment.order).session(session);
+        if (!order) {
+            throw new apiError_1.ApiError(404, "Order not found");
+        }
         order.paymentStatus = "FAILED";
-        await order.save();
+        order.orderStatus = "CANCELLED";
+        await order.save({
+            session,
+        });
+        await session.commitTransaction();
+        return payment;
     }
-    return payment;
+    catch (error) {
+        await session.abortTransaction();
+        throw error;
+    }
+    finally {
+        session.endSession();
+    }
 };
 exports.paymentFailedService = paymentFailedService;
-// Admin - Get All Payments
-const getAllPaymentsService = async () => {
-    return await payment_1.default.find()
+// Get All Payments
+const getAllPaymentsService = async (page, limit, sort = "-createdAt", status, paymentMethod, search) => {
+    const filter = {};
+    if (status) {
+        filter.status = status;
+    }
+    if (paymentMethod) {
+        filter.paymentMethod = paymentMethod;
+    }
+    if (search) {
+        filter.paymentId = {
+            $regex: search,
+            $options: "i",
+        };
+    }
+    const skip = (page - 1) * limit;
+    const payments = await payment_1.default.find(filter)
         .populate("user", "name email")
         .populate("order")
-        .sort({
-        createdAt: -1,
-    });
+        .sort(sort)
+        .skip(skip)
+        .limit(limit);
+    const total = await payment_1.default.countDocuments(filter);
+    return {
+        total,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        payments,
+    };
 };
 exports.getAllPaymentsService = getAllPaymentsService;

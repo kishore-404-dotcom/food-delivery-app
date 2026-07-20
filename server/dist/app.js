@@ -13,10 +13,20 @@ const cartRoutes_1 = __importDefault(require("./routes/cartRoutes"));
 const orderRoutes_1 = __importDefault(require("./routes/orderRoutes"));
 const errorMiddleware_1 = __importDefault(require("./middleware/errorMiddleware"));
 const paymentRoutes_1 = __importDefault(require("./routes/paymentRoutes"));
+const reviewRoutes_1 = __importDefault(require("./routes/reviewRoutes"));
+const addressRoutes_1 = __importDefault(require("./routes/addressRoutes"));
+const couponRoutes_1 = __importDefault(require("./routes/couponRoutes"));
+const notificationRoutes_1 = __importDefault(require("./routes/notificationRoutes"));
+const wishlistRoutes_1 = __importDefault(require("./routes/wishlistRoutes"));
+const rateLimiter_1 = require("./middleware/rateLimiter");
+const requestLogger_1 = __importDefault(require("./middleware/requestLogger"));
 const app = (0, express_1.default)();
+const swagger_1 = require("./config/swagger");
 // Middleware
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
+app.use(requestLogger_1.default);
+app.use(rateLimiter_1.apiLimiter);
 // Test Route
 app.get("/", (req, res) => {
     res.send("🚀 Food Delivery API is running...");
@@ -36,4 +46,16 @@ app.use("/api/orders", orderRoutes_1.default);
 app.use(errorMiddleware_1.default);
 // Payment Routes
 app.use("/api/payments", paymentRoutes_1.default);
+// Review Routes
+app.use("/api/reviews", reviewRoutes_1.default);
+// Address Routes
+app.use("/api/addresses", addressRoutes_1.default);
+// Coupon Routes
+app.use("/api/coupons", couponRoutes_1.default);
+// Notification Routes
+app.use("/api/notifications", notificationRoutes_1.default);
+// Wishlist Routes
+app.use("/api/wishlist", wishlistRoutes_1.default);
+// Swagger Documentation
+app.use("/api-docs", swagger_1.swaggerUi.serve, swagger_1.swaggerUi.setup(swagger_1.swaggerSpec));
 exports.default = app;

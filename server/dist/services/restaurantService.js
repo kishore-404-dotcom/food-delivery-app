@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getRestaurantsByCategoryService = exports.searchRestaurantsService = exports.deleteRestaurantService = exports.updateRestaurantService = exports.getRestaurantByIdService = exports.getAllRestaurantsService = exports.createRestaurantService = void 0;
 const restaurant_1 = __importDefault(require("../models/restaurant"));
 const apiError_1 = require("../utils/apiError");
+const cacheService_1 = require("./cacheService");
 // Create restaurant
 const createRestaurantService = async (restaurantData) => {
     return await restaurant_1.default.create(restaurantData);
@@ -13,9 +14,17 @@ const createRestaurantService = async (restaurantData) => {
 exports.createRestaurantService = createRestaurantService;
 // Get all restaurants
 const getAllRestaurantsService = async () => {
-    return await restaurant_1.default.find()
+    const cached = await (0, cacheService_1.getCache)("restaurants");
+    if (cached) {
+        return JSON.parse(cached);
+    }
+    const restaurants = await restaurant_1.default.find()
         .populate("owner", "name email")
-        .sort({ createdAt: -1 });
+        .sort({
+        createdAt: -1,
+    });
+    await (0, cacheService_1.setCache)("restaurants", restaurants);
+    return restaurants;
 };
 exports.getAllRestaurantsService = getAllRestaurantsService;
 // Get restaurant by ID

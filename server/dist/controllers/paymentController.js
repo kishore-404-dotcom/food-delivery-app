@@ -37,7 +37,8 @@ exports.paymentFailed = (0, asyncHandler_1.default)(async (req, res) => {
     res.status(200).json(new apiResponse_1.ApiResponse(true, "Payment marked as failed", payment));
 });
 // Get All Payments (Admin)
-exports.getAllPayments = (0, asyncHandler_1.default)(async (_req, res) => {
-    const payments = await (0, paymentService_1.getAllPaymentsService)();
+exports.getAllPayments = (0, asyncHandler_1.default)(async (req, res) => {
+    const { page, limit, sort, status, paymentMethod, search, } = req.query;
+    const payments = await (0, paymentService_1.getAllPaymentsService)(Number(page) || 1, Number(limit) || 10, sort || "-createdAt", status, paymentMethod, search);
     res.status(200).json(new apiResponse_1.ApiResponse(true, "Payments fetched successfully", payments));
 });

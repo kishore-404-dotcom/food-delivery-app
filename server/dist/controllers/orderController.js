@@ -7,9 +7,9 @@ exports.updateOrderStatus = exports.getAllOrders = exports.getMyOrders = exports
 const asyncHandler_1 = __importDefault(require("../middleware/asyncHandler"));
 const apiResponse_1 = require("../utils/apiResponse");
 const orderService_1 = require("../services/orderService");
-// Place order
+// Place Order
 exports.placeOrder = (0, asyncHandler_1.default)(async (req, res) => {
-    const order = await (0, orderService_1.placeOrderService)(req.user.id, req.body.paymentMethod);
+    const order = await (0, orderService_1.placeOrderService)(req.user.id, req.body.paymentMethod, req.body.deliveryAddress);
     res.status(201).json(new apiResponse_1.ApiResponse(true, "Order placed successfully", order));
 });
 // Get my orders

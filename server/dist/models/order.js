@@ -39,7 +39,11 @@ const orderSchema = new mongoose_1.Schema({
         type: mongoose_1.Schema.Types.ObjectId,
         ref: "User",
         required: true,
-        index: true,
+    },
+    deliveryAddress: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: "Address",
+        required: true,
     },
     items: [
         {
@@ -84,6 +88,7 @@ const orderSchema = new mongoose_1.Schema({
         type: String,
         enum: [
             "PLACED",
+            "CONFIRMED",
             "PREPARING",
             "OUT_FOR_DELIVERY",
             "DELIVERED",
@@ -95,4 +100,9 @@ const orderSchema = new mongoose_1.Schema({
     timestamps: true,
     versionKey: false,
 });
+orderSchema.index({ user: 1 });
+orderSchema.index({ deliveryAddress: 1 });
+orderSchema.index({ paymentStatus: 1 });
+orderSchema.index({ orderStatus: 1 });
+orderSchema.index({ createdAt: -1 });
 exports.default = mongoose_1.default.model("Order", orderSchema);

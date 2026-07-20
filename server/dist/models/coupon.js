@@ -34,58 +34,39 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const foodSchema = new mongoose_1.Schema({
-    name: {
+const couponSchema = new mongoose_1.Schema({
+    code: {
         type: String,
         required: true,
+        unique: true,
+        uppercase: true,
         trim: true,
     },
-    description: {
+    discountType: {
         type: String,
+        enum: [
+            "flat",
+            "percentage",
+        ],
         required: true,
     },
-    price: {
+    discountValue: {
         type: Number,
         required: true,
     },
-    image: {
-        type: String,
-        default: "",
+    minOrderAmount: {
+        type: Number,
+        default: 0,
     },
-    category: {
-        type: String,
+    expiryDate: {
+        type: Date,
         required: true,
     },
-    isAvailable: {
+    isActive: {
         type: Boolean,
         default: true,
-    },
-    // Restaurant reference
-    restaurant: {
-        type: mongoose_1.Schema.Types.ObjectId,
-        ref: "Restaurant",
-        required: true,
-    },
-    // Review Statistics
-    averageRating: {
-        type: Number,
-        default: 0,
-        min: 0,
-        max: 5,
-    },
-    totalReviews: {
-        type: Number,
-        default: 0,
-        min: 0,
     },
 }, {
     timestamps: true,
 });
-// Indexes
-foodSchema.index({ name: "text" });
-foodSchema.index({ category: 1 });
-foodSchema.index({ restaurant: 1 });
-foodSchema.index({ averageRating: -1 });
-foodSchema.index({ price: 1 });
-foodSchema.index({ createdAt: -1 });
-exports.default = mongoose_1.default.model("Food", foodSchema);
+exports.default = mongoose_1.default.model("Coupon", couponSchema);

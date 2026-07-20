@@ -39,14 +39,11 @@ const paymentSchema = new mongoose_1.Schema({
         type: mongoose_1.Schema.Types.ObjectId,
         ref: "User",
         required: true,
-        index: true,
     },
     order: {
         type: mongoose_1.Schema.Types.ObjectId,
         ref: "Order",
         required: true,
-        unique: true,
-        index: true,
     },
     amount: {
         type: Number,
@@ -73,4 +70,9 @@ const paymentSchema = new mongoose_1.Schema({
     timestamps: true,
     versionKey: false,
 });
+paymentSchema.index({ user: 1 });
+paymentSchema.index({ order: 1 });
+paymentSchema.index({ status: 1 });
+paymentSchema.index({ paymentMethod: 1 });
+paymentSchema.index({ createdAt: -1 });
 exports.default = mongoose_1.default.model("Payment", paymentSchema);

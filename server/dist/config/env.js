@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RAZORPAY_KEY_SECRET = exports.RAZORPAY_KEY_ID = exports.CLOUDINARY_API_SECRET = exports.CLOUDINARY_API_KEY = exports.CLOUDINARY_CLOUD_NAME = exports.MONGODB_URI = exports.JWT_SECRET = exports.PORT = void 0;
+exports.REDIS_URL = exports.MAIL_SECURE = exports.MAIL_PORT = exports.MAIL_HOST = exports.EMAIL_PASSWORD = exports.EMAIL_USER = exports.RAZORPAY_KEY_SECRET = exports.RAZORPAY_KEY_ID = exports.CLOUDINARY_API_SECRET = exports.CLOUDINARY_API_KEY = exports.CLOUDINARY_CLOUD_NAME = exports.MONGODB_URI = exports.JWT_SECRET = exports.PORT = void 0;
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 exports.PORT = process.env.PORT || 5000;
@@ -14,3 +14,9 @@ exports.CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY;
 exports.CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET;
 exports.RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
 exports.RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
+exports.EMAIL_USER = process.env.EMAIL_USER;
+exports.EMAIL_PASSWORD = process.env.EMAIL_PASSWORD;
+exports.MAIL_HOST = process.env.MAIL_HOST;
+exports.MAIL_PORT = Number(process.env.MAIL_PORT);
+exports.MAIL_SECURE = process.env.MAIL_SECURE === "true";
+exports.REDIS_URL = process.env.REDIS_URL;
