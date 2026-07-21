@@ -40,7 +40,7 @@ app.use(apiLimiter);
 
 // Test Route
 app.get("/", (req, res) => {
-  res.send("🚀 Food Delivery API is running...");
+  res.status(200).send("🚀 Food Delivery API is running...");
 });
 
 // Auth Routes
@@ -59,9 +59,6 @@ app.use("/api/cart", cartRoutes);
 
 // Order Routes
 app.use("/api/orders", orderRoutes);
-
-// Error Middleware
-app.use(errorMiddleware);
 
 // Payment Routes
 app.use("/api/payments", paymentRoutes);
@@ -83,4 +80,19 @@ app.use("/api/wishlist", wishlistRoutes);
 
 // Swagger Documentation
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec)); 
+
+// Swagger documentation
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Route not found: ${req.method} ${req.originalUrl}`,
+  });
+});
+
+// Error middleware must always be last
+app.use(errorMiddleware);
+
 export default app;
