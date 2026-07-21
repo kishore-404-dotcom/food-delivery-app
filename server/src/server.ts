@@ -5,10 +5,17 @@ import "./workers/emailWorker";
 import "./cron/cronJobs";
 import logger from "./config/logger";
 
-// Connect to MongoDB
-connectDB();
+async function startServer() {
+  try {
+    await connectDB();
 
-// Start server
-app.listen(PORT, () => {
-  logger.info(`🚀 Server running on http://localhost:${PORT}`);
-});
+    app.listen(PORT, () => {
+      logger.info(`🚀 Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    logger.error("Failed to start server:", error);
+    process.exit(1);
+  }
+}
+
+startServer();
