@@ -1,16 +1,36 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { ClipLoader } from "react-spinners";
 import { toast } from "react-toastify";
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
+import axios from "axios";
+
+import api from "../../services/api";
 
 type LoginForm = {
   email: string;
   password: string;
 };
 
+type LoginResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    token: string;
+    user: {
+      _id: string;
+      name: string;
+      email: string;
+      phone: string;
+      role: string;
+    };
+  };
+};
+
 function Login() {
+  const navigate = useNavigate();
+
   const {
     register,
     handleSubmit,
@@ -19,28 +39,35 @@ function Login() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const isMounted = useRef(true);
-
-  useEffect(() => {
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
 
   const onSubmit = async (data: LoginForm) => {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    console.log(data);
+      const response = await api.post<LoginResponse>("/auth/login", data);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+      const { token, user } = response.data.data;
 
-    // Only update state if component is still mounted
-    if (!isMounted.current) return;
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
 
-    setLoading(false);
+      toast.success(response.data.message || "Login successful!");
 
-    toast.success("Login Successful!");
+      navigate("/");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message =
+          error.response?.data?.message ||
+          error.response?.data?.errors?.[0]?.msg ||
+          "Login failed";
+
+        toast.error(message);
+      } else {
+        toast.error("Something went wrong");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -54,7 +81,6 @@ function Login() {
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-5"
         >
-          {/* Email */}
           <div>
             <label className="mb-2 block font-medium">
               Email
@@ -80,7 +106,6 @@ function Login() {
             )}
           </div>
 
-          {/* Password */}
           <div>
             <label className="mb-2 block font-medium">
               Password
@@ -102,8 +127,11 @@ function Login() {
 
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() => setShowPassword((current) => !current)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-orange-500"
+                aria-label={
+                  showPassword ? "Hide password" : "Show password"
+                }
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
@@ -116,18 +144,12 @@ function Login() {
             )}
           </div>
 
-          {/* Login Button */}
           <button
             type="submit"
             disabled={loading}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 py-3 font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-gray-400"
           >
-            {loading && (
-              <ClipLoader
-                color="#ffffff"
-                size={18}
-              />
-            )}
+            {loading && <ClipLoader color="#ffffff" size={18} />}
 
             {loading ? "Logging in..." : "Login"}
           </button>

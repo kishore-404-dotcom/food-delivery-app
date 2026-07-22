@@ -22,8 +22,6 @@ function App() {
         <Route path="/cart" element={<Cart />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="*" element={<NotFound />} />
-
-        <Route path="/register" element={<Register />} />
       </Routes>
     </>
   );

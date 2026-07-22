@@ -1,18 +1,36 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { ClipLoader } from "react-spinners";
 import { toast } from "react-toastify";
+import axios from "axios";
+
+import api from "../../services/api";
 
 type RegisterForm = {
-  fullName: string;
+  name: string;
   email: string;
+  phone: string;
   password: string;
   confirmPassword: string;
 };
 
+type RegisterResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    _id: string;
+    name: string;
+    email: string;
+    phone: string;
+    role: string;
+  };
+};
+
 function Register() {
+  const navigate = useNavigate();
+
   const {
     register,
     handleSubmit,
@@ -21,33 +39,50 @@ function Register() {
   } = useForm<RegisterForm>();
 
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState(false);
   const [loading, setLoading] = useState(false);
-
-  const isMounted = useRef(true);
-
-  useEffect(() => {
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
 
   const password = watch("password");
 
-  const onSubmit = async (data: RegisterForm) => {
-    setLoading(true);
+  const onSubmit = async ({
+    name,
+    email,
+    phone,
+    password,
+  }: RegisterForm) => {
+    try {
+      setLoading(true);
 
-    console.log(data);
+      const response = await api.post<RegisterResponse>(
+        "/auth/register",
+        {
+          name,
+          email,
+          phone,
+          password,
+        }
+      );
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+      toast.success(
+        response.data.message || "Registration successful!"
+      );
 
-    // Prevent state update if component unmounted
-    if (!isMounted.current) return;
+      navigate("/login");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message =
+          error.response?.data?.message ||
+          error.response?.data?.errors?.[0]?.msg ||
+          "Registration failed";
 
-    setLoading(false);
-
-    toast.success("Registration Successful!");
+        toast.error(message);
+      } else {
+        toast.error("Something went wrong");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -61,7 +96,6 @@ function Register() {
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-5"
         >
-          {/* Full Name */}
           <div>
             <label className="mb-2 block font-medium">
               Full Name
@@ -70,20 +104,23 @@ function Register() {
             <input
               type="text"
               placeholder="Enter your full name"
-              {...register("fullName", {
+              {...register("name", {
                 required: "Full name is required",
+                minLength: {
+                  value: 2,
+                  message: "Name must contain at least 2 characters",
+                },
               })}
               className="w-full rounded-lg border px-4 py-3 outline-none focus:border-orange-500"
             />
 
-            {errors.fullName && (
+            {errors.name && (
               <p className="mt-1 text-sm text-red-500">
-                {errors.fullName.message}
+                {errors.name.message}
               </p>
             )}
           </div>
 
-          {/* Email */}
           <div>
             <label className="mb-2 block font-medium">
               Email
@@ -109,7 +146,31 @@ function Register() {
             )}
           </div>
 
-          {/* Password */}
+          <div>
+            <label className="mb-2 block font-medium">
+              Phone Number
+            </label>
+
+            <input
+              type="tel"
+              placeholder="Enter your phone number"
+              {...register("phone", {
+                required: "Phone number is required",
+                pattern: {
+                  value: /^[0-9]{10}$/,
+                  message: "Enter a valid 10-digit phone number",
+                },
+              })}
+              className="w-full rounded-lg border px-4 py-3 outline-none focus:border-orange-500"
+            />
+
+            {errors.phone && (
+              <p className="mt-1 text-sm text-red-500">
+                {errors.phone.message}
+              </p>
+            )}
+          </div>
+
           <div>
             <label className="mb-2 block font-medium">
               Password
@@ -131,8 +192,11 @@ function Register() {
 
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() => setShowPassword((current) => !current)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-orange-500"
+                aria-label={
+                  showPassword ? "Hide password" : "Show password"
+                }
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
@@ -145,7 +209,6 @@ function Register() {
             )}
           </div>
 
-          {/* Confirm Password */}
           <div>
             <label className="mb-2 block font-medium">
               Confirm Password
@@ -153,12 +216,15 @@ function Register() {
 
             <div className="relative">
               <input
-                type={showConfirmPassword ? "text" : "password"}
+                type={
+                  showConfirmPassword ? "text" : "password"
+                }
                 placeholder="Confirm password"
                 {...register("confirmPassword", {
                   required: "Confirm your password",
                   validate: (value) =>
-                    value === password || "Passwords do not match",
+                    value === password ||
+                    "Passwords do not match",
                 })}
                 className="w-full rounded-lg border px-4 py-3 pr-12 outline-none focus:border-orange-500"
               />
@@ -166,9 +232,14 @@ function Register() {
               <button
                 type="button"
                 onClick={() =>
-                  setShowConfirmPassword(!showConfirmPassword)
+                  setShowConfirmPassword((current) => !current)
                 }
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-orange-500"
+                aria-label={
+                  showConfirmPassword
+                    ? "Hide confirm password"
+                    : "Show confirm password"
+                }
               >
                 {showConfirmPassword ? (
                   <FaEyeSlash />
@@ -185,18 +256,12 @@ function Register() {
             )}
           </div>
 
-          {/* Register Button */}
           <button
             type="submit"
             disabled={loading}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 py-3 font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-gray-400"
           >
-            {loading && (
-              <ClipLoader
-                color="#ffffff"
-                size={18}
-              />
-            )}
+            {loading && <ClipLoader color="#ffffff" size={18} />}
 
             {loading ? "Creating Account..." : "Register"}
           </button>
