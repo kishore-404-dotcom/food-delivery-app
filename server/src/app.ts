@@ -27,13 +27,20 @@ import { apiLimiter } from "./middleware/rateLimiter";
 import requestLogger from "./middleware/requestLogger";
 const app = express();
 
+app.set("trust proxy", 1);
+
 import {
   swaggerUi,
   swaggerSpec,
 } from "./config/swagger";
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(requestLogger);
 app.use(apiLimiter);
@@ -79,9 +86,6 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 
 // Swagger Documentation
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec)); 
-
-// Swagger documentation
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // 404 handler

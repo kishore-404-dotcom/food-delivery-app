@@ -10,12 +10,13 @@ import validateRequest from "../middleware/validateRequest";
 
 import {
   authLimiter,
+  registerLimiter
 } from "../middleware/rateLimiter";
 
 const router = express.Router();
 
 // Register user
-router.post("/register", registerValidator, validateRequest,authLimiter, register);
+router.post("/register", registerValidator, validateRequest, registerLimiter, register);
 
 // Login user
 router.post("/login", loginValidator, validateRequest, authLimiter, login);

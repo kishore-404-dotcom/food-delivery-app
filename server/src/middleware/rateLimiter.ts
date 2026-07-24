@@ -56,3 +56,18 @@ export const paymentLimiter = rateLimit({
 
   legacyHeaders: false,
 });
+
+export const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+
+  max: 10,
+
+  message: {
+    success: false,
+    message: "Too many registration attempts. Please try again later.",
+  },
+
+  standardHeaders: true,
+
+  legacyHeaders: false,
+});
