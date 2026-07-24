@@ -8,6 +8,18 @@ const readRequired = (name: string): string => {
   return value;
 };
 
+const validateOptionalGroup = (label: string, names: string[]): void => {
+  const configuredNames = names.filter((name) => process.env[name]?.trim());
+  if (configuredNames.length === 0) return;
+
+  const missingNames = names.filter((name) => !process.env[name]?.trim());
+  if (missingNames.length > 0) {
+    throw new Error(
+      `${label} is partially configured. Missing environment variable(s): ${missingNames.join(", ")}`
+    );
+  }
+};
+
 export const NODE_ENV = process.env.NODE_ENV || "development";
 export const PORT = Number(process.env.PORT || 5000);
 export const JWT_SECRET = process.env.JWT_SECRET?.trim() || "";
@@ -38,18 +50,22 @@ export const validateEnvironment = (): void => {
   }
 
   if (NODE_ENV === "production") {
-    [
-      "FRONTEND_URL",
+    readRequired("FRONTEND_URL");
+
+    validateOptionalGroup("Cloudinary", [
       "CLOUDINARY_CLOUD_NAME",
       "CLOUDINARY_API_KEY",
       "CLOUDINARY_API_SECRET",
+    ]);
+    validateOptionalGroup("Razorpay", [
       "RAZORPAY_KEY_ID",
       "RAZORPAY_KEY_SECRET",
+    ]);
+    validateOptionalGroup("Email", [
       "MAIL_HOST",
-      "MAIL_PORT",
       "EMAIL_USER",
       "EMAIL_PASSWORD",
-    ].forEach(readRequired);
+    ]);
 
     const frontend = new URL(FRONTEND_URL);
     if (frontend.protocol !== "https:") {
