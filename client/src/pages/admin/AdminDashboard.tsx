@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   FaUserShield,
   FaShoppingBag,
+  FaUtensils,
   FaTag,
   FaCreditCard,
   FaStar,
@@ -9,20 +10,41 @@ import {
   FaRedo,
   FaPlus,
   FaTrash,
+  FaEdit,
+  FaBoxOpen,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 
-import type { IOrder, ICoupon, IPayment, IReview, IUser } from "../../types/food";
+import type { IOrder, ICoupon, IPayment, IReview, IRestaurant, IFood, IUser } from "../../types/food";
 import { getAllOrders, updateOrderStatus } from "../../services/orderService";
 import { getCoupons, createCoupon, deleteCoupon } from "../../services/couponService";
 import { getAllPayments } from "../../services/paymentService";
 import { getMyReviews } from "../../services/reviewService";
+import {
+  getAllRestaurants,
+  createRestaurant,
+  updateRestaurant,
+  deleteRestaurant,
+  type CreateRestaurantInput,
+} from "../../services/restaurantService";
+import {
+  getFoods,
+  createFood,
+  updateFood,
+  deleteFood,
+  type CreateFoodInput,
+} from "../../services/foodService";
+import { getDashboardOverview, type DashboardOverview } from "../../services/adminService";
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<
-    "overview" | "orders" | "coupons" | "payments" | "reviews"
+    "overview" | "restaurants" | "foods" | "orders" | "coupons" | "payments" | "reviews"
   >("overview");
 
+  // State
+  const [overview, setOverview] = useState<DashboardOverview | null>(null);
+  const [restaurants, setRestaurants] = useState<IRestaurant[]>([]);
+  const [foods, setFoods] = useState<IFood[]>([]);
   const [orders, setOrders] = useState<IOrder[]>([]);
   const [coupons, setCoupons] = useState<ICoupon[]>([]);
   const [payments, setPayments] = useState<IPayment[]>([]);
@@ -30,27 +52,61 @@ export function AdminDashboard() {
 
   const [loading, setLoading] = useState(true);
 
-  // New Coupon Form State
+  // Restaurant Modal & Form State
+  const [isRestModalOpen, setIsRestModalOpen] = useState(false);
+  const [editingRest, setEditingRest] = useState<IRestaurant | null>(null);
+  const [restName, setRestName] = useState("");
+  const [restCategory, setRestCategory] = useState("Italian");
+  const [restAddress, setRestAddress] = useState("");
+  const [restImage, setRestImage] = useState("");
+
+  // Food Modal & Form State
+  const [isFoodModalOpen, setIsFoodModalOpen] = useState(false);
+  const [editingFood, setEditingFood] = useState<IFood | null>(null);
+  const [foodName, setFoodName] = useState("");
+  const [foodDesc, setFoodDesc] = useState("");
+  const [foodPrice, setFoodPrice] = useState<number>(199);
+  const [foodCategory, setFoodCategory] = useState("Main Course");
+  const [foodRestId, setFoodRestId] = useState("");
+  const [foodImage, setFoodImage] = useState("");
+
+  // Coupon Form State
   const [newCouponCode, setNewCouponCode] = useState("");
   const [newDiscountType, setNewDiscountType] = useState<"flat" | "percentage">("flat");
   const [newDiscountValue, setNewDiscountValue] = useState<number>(50);
   const [newMinOrderAmount, setNewMinOrderAmount] = useState<number>(200);
 
+  // Order Filter
+  const [orderStatusFilter, setOrderStatusFilter] = useState<string>("ALL");
+
   const fetchAdminData = useCallback(async () => {
     try {
       setLoading(true);
-      const [ordersData, couponsData, paymentsData, reviewsData] =
-        await Promise.allSettled([
-          getAllOrders(),
-          getCoupons(),
-          getAllPayments(),
-          getMyReviews(),
-        ]);
+      const [
+        overviewRes,
+        restsRes,
+        foodsRes,
+        ordersRes,
+        couponsRes,
+        paymentsRes,
+        reviewsRes,
+      ] = await Promise.allSettled([
+        getDashboardOverview(),
+        getAllRestaurants(),
+        getFoods(),
+        getAllOrders(),
+        getCoupons(),
+        getAllPayments(),
+        getMyReviews(),
+      ]);
 
-      if (ordersData.status === "fulfilled") setOrders(ordersData.value);
-      if (couponsData.status === "fulfilled") setCoupons(couponsData.value);
-      if (paymentsData.status === "fulfilled") setPayments(paymentsData.value);
-      if (reviewsData.status === "fulfilled") setReviews(reviewsData.value);
+      if (overviewRes.status === "fulfilled") setOverview(overviewRes.value);
+      if (restsRes.status === "fulfilled") setRestaurants(restsRes.value);
+      if (foodsRes.status === "fulfilled") setFoods(foodsRes.value);
+      if (ordersRes.status === "fulfilled") setOrders(ordersRes.value);
+      if (couponsRes.status === "fulfilled") setCoupons(couponsRes.value);
+      if (paymentsRes.status === "fulfilled") setPayments(paymentsRes.value);
+      if (reviewsRes.status === "fulfilled") setReviews(reviewsRes.value);
     } catch (err: unknown) {
       console.error("Error loading admin dashboard data:", err);
       toast.error("Failed to load admin analytics");
@@ -63,6 +119,119 @@ export function AdminDashboard() {
     fetchAdminData();
   }, [fetchAdminData]);
 
+  // RESTAURANT CRUD
+  const handleSaveRestaurant = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!restName.trim() || !restAddress.trim()) {
+      toast.error("Please fill in restaurant name and address");
+      return;
+    }
+
+    try {
+      const payload: CreateRestaurantInput = {
+        name: restName.trim(),
+        category: restCategory,
+        address: restAddress.trim(),
+        image: restImage.trim() || undefined,
+      };
+
+      if (editingRest) {
+        await updateRestaurant(editingRest._id, payload);
+        toast.success("Restaurant updated!");
+      } else {
+        await createRestaurant(payload);
+        toast.success("Restaurant created!");
+      }
+
+      setIsRestModalOpen(false);
+      setEditingRest(null);
+      setRestName("");
+      setRestCategory("Italian");
+      setRestAddress("");
+      setRestImage("");
+      fetchAdminData();
+    } catch (err: unknown) {
+      console.error("Error saving restaurant:", err);
+      toast.error("Failed to save restaurant");
+    }
+  };
+
+  const handleDeleteRestaurant = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this restaurant?")) return;
+    try {
+      await deleteRestaurant(id);
+      toast.success("Restaurant deleted!");
+      fetchAdminData();
+    } catch (err: unknown) {
+      console.error("Error deleting restaurant:", err);
+      toast.error("Failed to delete restaurant");
+    }
+  };
+
+  // FOOD CRUD
+  const handleSaveFood = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!foodName.trim() || !foodRestId) {
+      toast.error("Please select a restaurant and food name");
+      return;
+    }
+
+    try {
+      const payload: CreateFoodInput = {
+        name: foodName.trim(),
+        description: foodDesc.trim(),
+        price: Number(foodPrice),
+        category: foodCategory,
+        restaurant: foodRestId,
+        image: foodImage.trim() || undefined,
+        isAvailable: true,
+      };
+
+      if (editingFood) {
+        await updateFood(editingFood._id, payload);
+        toast.success("Food dish updated!");
+      } else {
+        await createFood(payload);
+        toast.success("Food dish created!");
+      }
+
+      setIsFoodModalOpen(false);
+      setEditingFood(null);
+      setFoodName("");
+      setFoodDesc("");
+      setFoodPrice(199);
+      setFoodImage("");
+      fetchAdminData();
+    } catch (err: unknown) {
+      console.error("Error saving food:", err);
+      toast.error("Failed to save food dish");
+    }
+  };
+
+  const handleToggleFoodAvailability = async (food: IFood) => {
+    try {
+      await updateFood(food._id, { isAvailable: !food.isAvailable });
+      toast.success(`${food.name} availability updated!`);
+      fetchAdminData();
+    } catch (err: unknown) {
+      console.error("Error updating food availability:", err);
+      toast.error("Failed to update availability");
+    }
+  };
+
+  const handleDeleteFood = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this food dish?")) return;
+    try {
+      await deleteFood(id);
+      toast.success("Food dish deleted!");
+      fetchAdminData();
+    } catch (err: unknown) {
+      console.error("Error deleting food:", err);
+      toast.error("Failed to delete food");
+    }
+  };
+
+  // ORDER STATUS
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     try {
       await updateOrderStatus(orderId, newStatus);
@@ -74,6 +243,7 @@ export function AdminDashboard() {
     }
   };
 
+  // COUPON CRUD
   const handleCreateCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCouponCode.trim()) {
@@ -83,7 +253,7 @@ export function AdminDashboard() {
 
     try {
       const expiry = new Date();
-      expiry.setDate(expiry.getDate() + 30); // 30 days default
+      expiry.setDate(expiry.getDate() + 30);
 
       await createCoupon({
         code: newCouponCode.trim().toUpperCase(),
@@ -115,6 +285,11 @@ export function AdminDashboard() {
     }
   };
 
+  const filteredOrders =
+    orderStatusFilter === "ALL"
+      ? orders
+      : orders.filter((o) => o.orderStatus === orderStatusFilter);
+
   const totalRevenue = orders
     .filter((o) => o.paymentStatus === "PAID" || o.orderStatus === "DELIVERED")
     .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
@@ -127,10 +302,10 @@ export function AdminDashboard() {
           <div>
             <div className="flex items-center gap-2">
               <FaUserShield className="text-orange-500 text-2xl" />
-              <h1 className="text-3xl font-black">Admin Management Control</h1>
+              <h1 className="text-3xl font-black">Admin Control Panel</h1>
             </div>
             <p className="mt-1 text-sm text-gray-400">
-              Live platform analytics, order state transitions, and system controls.
+              Manage platform restaurants, foods, live order statuses, coupons, and analytics.
             </p>
           </div>
 
@@ -145,7 +320,9 @@ export function AdminDashboard() {
         {/* Navigation Tabs */}
         <div className="flex overflow-x-auto gap-2 border-b pb-2">
           {[
-            { id: "overview", label: "Analytics Overview", icon: FaChartLine },
+            { id: "overview", label: "Overview", icon: FaChartLine },
+            { id: "restaurants", label: `Restaurants (${restaurants.length})`, icon: FaUtensils },
+            { id: "foods", label: `Foods (${foods.length})`, icon: FaBoxOpen },
             { id: "orders", label: `Orders (${orders.length})`, icon: FaShoppingBag },
             { id: "coupons", label: `Coupons (${coupons.length})`, icon: FaTag },
             { id: "payments", label: `Payments (${payments.length})`, icon: FaCreditCard },
@@ -181,228 +358,309 @@ export function AdminDashboard() {
         {!loading && activeTab === "overview" && (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-3xl bg-white p-6 shadow-sm border">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-gray-400 uppercase">
-                  Total Platform Revenue
-                </span>
-                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-green-100 text-green-600 font-bold">
-                  ₹
-                </span>
-              </div>
-              <h2 className="mt-4 text-3xl font-black text-gray-900">₹{totalRevenue}</h2>
+              <span className="text-xs font-bold text-gray-400 uppercase">Total Revenue</span>
+              <h2 className="mt-2 text-3xl font-black text-green-600">₹{overview?.totalRevenue || totalRevenue}</h2>
             </div>
-
             <div className="rounded-3xl bg-white p-6 shadow-sm border">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-gray-400 uppercase">
-                  Total Orders Placed
-                </span>
-                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-orange-100 text-orange-600 font-bold">
-                  <FaShoppingBag />
-                </span>
-              </div>
-              <h2 className="mt-4 text-3xl font-black text-gray-900">{orders.length}</h2>
+              <span className="text-xs font-bold text-gray-400 uppercase">Restaurants</span>
+              <h2 className="mt-2 text-3xl font-black text-gray-900">{overview?.totalRestaurants || restaurants.length}</h2>
             </div>
-
             <div className="rounded-3xl bg-white p-6 shadow-sm border">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-gray-400 uppercase">
-                  Active Coupons
-                </span>
-                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-100 text-blue-600 font-bold">
-                  <FaTag />
-                </span>
-              </div>
-              <h2 className="mt-4 text-3xl font-black text-gray-900">{coupons.length}</h2>
+              <span className="text-xs font-bold text-gray-400 uppercase">Food Items</span>
+              <h2 className="mt-2 text-3xl font-black text-gray-900">{overview?.totalFoods || foods.length}</h2>
             </div>
-
             <div className="rounded-3xl bg-white p-6 shadow-sm border">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-gray-400 uppercase">
-                  Logged Transactions
-                </span>
-                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-purple-100 text-purple-600 font-bold">
-                  <FaCreditCard />
-                </span>
-              </div>
-              <h2 className="mt-4 text-3xl font-black text-gray-900">{payments.length}</h2>
+              <span className="text-xs font-bold text-gray-400 uppercase">Total Orders</span>
+              <h2 className="mt-2 text-3xl font-black text-orange-500">{overview?.totalOrders || orders.length}</h2>
             </div>
           </div>
         )}
 
-        {/* TAB 2: ORDERS MANAGEMENT */}
+        {/* TAB 2: RESTAURANTS */}
+        {!loading && activeTab === "restaurants" && (
+          <div className="rounded-3xl bg-white p-6 shadow-sm border space-y-6">
+            <div className="flex items-center justify-between border-b pb-4">
+              <h3 className="text-xl font-bold text-gray-900">Manage Restaurants</h3>
+              <button
+                onClick={() => {
+                  setEditingRest(null);
+                  setRestName("");
+                  setRestCategory("Italian");
+                  setRestAddress("");
+                  setRestImage("");
+                  setIsRestModalOpen(true);
+                }}
+                className="flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-xs font-bold text-white shadow hover:bg-orange-600"
+              >
+                <FaPlus /> Add Restaurant
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {restaurants.map((r) => (
+                <div key={r._id} className="rounded-2xl border p-4 bg-gray-50 flex items-center justify-between">
+                  <div>
+                    <h4 className="font-bold text-gray-900 text-sm">{r.name}</h4>
+                    <p className="text-xs text-gray-500">{r.address}</p>
+                    <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full mt-1 inline-block">
+                      {r.category}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setEditingRest(r);
+                        setRestName(r.name);
+                        setRestCategory(r.category || "Italian");
+                        setRestAddress(r.address);
+                        setRestImage(r.image || "");
+                        setIsRestModalOpen(true);
+                      }}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                    >
+                      <FaEdit />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteRestaurant(r._id)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                    >
+                      <FaTrash />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: FOODS */}
+        {!loading && activeTab === "foods" && (
+          <div className="rounded-3xl bg-white p-6 shadow-sm border space-y-6">
+            <div className="flex items-center justify-between border-b pb-4">
+              <h3 className="text-xl font-bold text-gray-900">Manage Food Menu</h3>
+              <button
+                onClick={() => {
+                  setEditingFood(null);
+                  setFoodName("");
+                  setFoodDesc("");
+                  setFoodPrice(199);
+                  setFoodCategory("Main Course");
+                  setFoodRestId(restaurants[0]?._id || "");
+                  setFoodImage("");
+                  setIsFoodModalOpen(true);
+                }}
+                className="flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-xs font-bold text-white shadow hover:bg-orange-600"
+              >
+                <FaPlus /> Add Food Dish
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {foods.map((f) => (
+                <div key={f._id} className="rounded-2xl border p-4 bg-gray-50 flex items-center justify-between text-xs">
+                  <div>
+                    <h4 className="font-bold text-gray-900 text-sm">{f.name}</h4>
+                    <p className="text-orange-500 font-bold">₹{f.price}</p>
+                    <button
+                      onClick={() => handleToggleFoodAvailability(f)}
+                      className={`mt-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        f.isAvailable ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {f.isAvailable ? "Available" : "Sold Out"}
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setEditingFood(f);
+                        setFoodName(f.name);
+                        setFoodDesc(f.description);
+                        setFoodPrice(f.price);
+                        setFoodCategory(f.category);
+                        setFoodRestId(
+                          typeof f.restaurant === "object" && f.restaurant !== null
+                            ? (f.restaurant as IRestaurant)._id
+                            : String(f.restaurant)
+                        );
+                        setFoodImage(f.image || "");
+                        setIsFoodModalOpen(true);
+                      }}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                    >
+                      <FaEdit />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteFood(f._id)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                    >
+                      <FaTrash />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: ORDERS */}
         {!loading && activeTab === "orders" && (
           <div className="rounded-3xl bg-white p-6 shadow-sm border space-y-4">
-            <h3 className="text-xl font-bold text-gray-900 border-b pb-4">
-              All Customer Orders ({orders.length})
-            </h3>
+            <div className="flex items-center justify-between border-b pb-4">
+              <h3 className="text-xl font-bold text-gray-900">
+                Customer Orders ({filteredOrders.length})
+              </h3>
+              <select
+                value={orderStatusFilter}
+                onChange={(e) => setOrderStatusFilter(e.target.value)}
+                className="rounded-xl border px-3 py-1.5 text-xs font-bold outline-none"
+              >
+                <option value="ALL">All Statuses</option>
+                <option value="PLACED">PLACED</option>
+                <option value="CONFIRMED">CONFIRMED</option>
+                <option value="PREPARING">PREPARING</option>
+                <option value="OUT_FOR_DELIVERY">OUT_FOR_DELIVERY</option>
+                <option value="DELIVERED">DELIVERED</option>
+                <option value="CANCELLED">CANCELLED</option>
+              </select>
+            </div>
 
-            {orders.length === 0 ? (
-              <p className="text-sm text-gray-500">No orders logged in system.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-gray-50 text-gray-700 uppercase font-bold">
-                    <tr>
-                      <th className="p-3">Order ID</th>
-                      <th className="p-3">User</th>
-                      <th className="p-3">Total Amount</th>
-                      <th className="p-3">Payment</th>
-                      <th className="p-3">Current Status</th>
-                      <th className="p-3 text-right">Update Status</th>
+            <div className="overflow-x-auto text-xs">
+              <table className="w-full text-left">
+                <thead className="bg-gray-50 font-bold uppercase">
+                  <tr>
+                    <th className="p-3">Order ID</th>
+                    <th className="p-3">User</th>
+                    <th className="p-3">Amount</th>
+                    <th className="p-3">Payment</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y font-medium">
+                  {filteredOrders.map((o) => (
+                    <tr key={o._id}>
+                      <td className="p-3 font-bold">#{o._id.substring(o._id.length - 8).toUpperCase()}</td>
+                      <td className="p-3">{typeof o.user === "object" && o.user ? (o.user as IUser).name : "Customer"}</td>
+                      <td className="p-3 font-bold text-orange-500">₹{o.totalAmount}</td>
+                      <td className="p-3">{o.paymentMethod}</td>
+                      <td className="p-3 font-bold text-blue-600">{o.orderStatus}</td>
+                      <td className="p-3 text-right">
+                        <select
+                          value={o.orderStatus}
+                          onChange={(e) => handleUpdateStatus(o._id, e.target.value)}
+                          className="rounded-lg border px-2 py-1 font-bold outline-none"
+                        >
+                          <option value="PLACED">PLACED</option>
+                          <option value="CONFIRMED">CONFIRMED</option>
+                          <option value="PREPARING">PREPARING</option>
+                          <option value="OUT_FOR_DELIVERY">OUT_FOR_DELIVERY</option>
+                          <option value="DELIVERED">DELIVERED</option>
+                          <option value="CANCELLED">CANCELLED</option>
+                        </select>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {orders.map((o) => (
-                      <tr key={o._id} className="hover:bg-gray-50 font-medium">
-                        <td className="p-3 font-bold">
-                          #{o._id.substring(o._id.length - 8).toUpperCase()}
-                        </td>
-                        <td className="p-3 font-semibold">
-                          {typeof o.user === "object" && o.user !== null
-                            ? (o.user as IUser).name
-                            : "Customer"}
-                        </td>
-                        <td className="p-3 font-bold text-orange-500">₹{o.totalAmount}</td>
-                        <td className="p-3">{o.paymentMethod} ({o.paymentStatus})</td>
-                        <td className="p-3 font-bold text-blue-600">{o.orderStatus}</td>
-                        <td className="p-3 text-right">
-                          <select
-                            value={o.orderStatus}
-                            onChange={(e) => handleUpdateStatus(o._id, e.target.value)}
-                            className="rounded-lg border px-2 py-1 text-xs font-bold text-gray-800 outline-none focus:border-orange-500"
-                          >
-                            <option value="PLACED">PLACED</option>
-                            <option value="CONFIRMED">CONFIRMED</option>
-                            <option value="PREPARING">PREPARING</option>
-                            <option value="OUT_FOR_DELIVERY">OUT_FOR_DELIVERY</option>
-                            <option value="DELIVERED">DELIVERED</option>
-                            <option value="CANCELLED">CANCELLED</option>
-                          </select>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
-        {/* TAB 3: COUPONS CONTROL */}
+        {/* TAB 5: COUPONS */}
         {!loading && activeTab === "coupons" && (
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-            {/* Create Coupon Form */}
-            <div className="rounded-3xl bg-white p-6 shadow-sm border space-y-4">
-              <h3 className="text-lg font-bold text-gray-900 border-b pb-3">
-                Create New Promo Coupon
-              </h3>
+            <form onSubmit={handleCreateCoupon} className="rounded-3xl bg-white p-6 shadow-sm border space-y-4 text-xs">
+              <h3 className="font-bold text-sm text-gray-900 border-b pb-2">New Coupon</h3>
+              <input
+                type="text"
+                placeholder="Code (e.g. SAVE20)"
+                value={newCouponCode}
+                onChange={(e) => setNewCouponCode(e.target.value)}
+                className="w-full rounded-xl border p-2 font-bold uppercase"
+              />
+              <select
+                value={newDiscountType}
+                onChange={(e) => setNewDiscountType(e.target.value as any)}
+                className="w-full rounded-xl border p-2 font-bold"
+              >
+                <option value="flat">Flat Amount (₹)</option>
+                <option value="percentage">Percentage (%)</option>
+              </select>
+              <input
+                type="number"
+                placeholder="Discount Value"
+                value={newDiscountValue}
+                onChange={(e) => setNewDiscountValue(Number(e.target.value))}
+                className="w-full rounded-xl border p-2 font-bold"
+              />
+              <input
+                type="number"
+                placeholder="Min Order Amount (₹)"
+                value={newMinOrderAmount}
+                onChange={(e) => setNewMinOrderAmount(Number(e.target.value))}
+                className="w-full rounded-xl border p-2 font-bold"
+              />
+              <button type="submit" className="w-full rounded-xl bg-orange-500 py-2.5 font-bold text-white shadow">
+                Create Coupon
+              </button>
+            </form>
 
-              <form onSubmit={handleCreateCoupon} className="space-y-4 text-xs">
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">
-                    Coupon Code *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. SAVE20"
-                    value={newCouponCode}
-                    onChange={(e) => setNewCouponCode(e.target.value)}
-                    className="w-full rounded-xl border px-3 py-2 uppercase font-bold outline-none focus:border-orange-500"
-                  />
+            <div className="rounded-3xl bg-white p-6 shadow-sm border space-y-3 lg:col-span-2 text-xs">
+              <h3 className="font-bold text-sm border-b pb-2">Active Coupons</h3>
+              {coupons.map((c) => (
+                <div key={c._id} className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border">
+                  <div>
+                    <span className="font-black text-orange-600 text-sm">{c.code}</span>
+                    <p className="text-gray-500">Discount: {c.discountType === "percentage" ? `${c.discountValue}%` : `₹${c.discountValue}`} (Min: ₹{c.minOrderAmount})</p>
+                  </div>
+                  <button onClick={() => handleDeleteCoupon(c._id)} className="text-red-500 p-2">
+                    <FaTrash />
+                  </button>
                 </div>
-
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">
-                    Discount Type
-                  </label>
-                  <select
-                    value={newDiscountType}
-                    onChange={(e) => setNewDiscountType(e.target.value as any)}
-                    className="w-full rounded-xl border px-3 py-2 font-semibold outline-none focus:border-orange-500"
-                  >
-                    <option value="flat">Flat Amount (₹)</option>
-                    <option value="percentage">Percentage (%)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">
-                    Discount Value ({newDiscountType === "flat" ? "₹" : "%"})
-                  </label>
-                  <input
-                    type="number"
-                    value={newDiscountValue}
-                    onChange={(e) => setNewDiscountValue(Number(e.target.value))}
-                    className="w-full rounded-xl border px-3 py-2 font-bold outline-none focus:border-orange-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">
-                    Min Order Amount (₹)
-                  </label>
-                  <input
-                    type="number"
-                    value={newMinOrderAmount}
-                    onChange={(e) => setNewMinOrderAmount(Number(e.target.value))}
-                    className="w-full rounded-xl border px-3 py-2 font-bold outline-none focus:border-orange-500"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full rounded-xl bg-orange-500 py-3 font-bold text-white shadow hover:bg-orange-600"
-                >
-                  <FaPlus className="inline mr-1" /> Create Coupon
-                </button>
-              </form>
-            </div>
-
-            {/* Coupons List */}
-            <div className="rounded-3xl bg-white p-6 shadow-sm border space-y-4 lg:col-span-2">
-              <h3 className="text-lg font-bold text-gray-900 border-b pb-3">
-                Active System Coupons ({coupons.length})
-              </h3>
-
-              {coupons.length === 0 ? (
-                <p className="text-xs text-gray-500">No coupons created yet.</p>
-              ) : (
-                <div className="space-y-3">
-                  {coupons.map((c) => (
-                    <div
-                      key={c._id}
-                      className="flex items-center justify-between rounded-2xl bg-orange-50/50 p-4 border border-orange-100 text-xs"
-                    >
-                      <div>
-                        <span className="font-black text-orange-600 text-sm">
-                          {c.code}
-                        </span>
-                        <p className="text-gray-600 mt-0.5">
-                          Discount:{" "}
-                          <strong>
-                            {c.discountType === "percentage"
-                              ? `${c.discountValue}%`
-                              : `₹${c.discountValue}`}
-                          </strong>{" "}
-                          (Min order: ₹{c.minOrderAmount})
-                        </p>
-                      </div>
-
-                      <button
-                        onClick={() => handleDeleteCoupon(c._id)}
-                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-red-500 border shadow-sm hover:bg-red-50"
-                      >
-                        <FaTrash />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              ))}
             </div>
           </div>
         )}
       </div>
+
+      {/* Restaurant Form Modal */}
+      {isRestModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <form onSubmit={handleSaveRestaurant} className="w-full max-w-md rounded-3xl bg-white p-6 space-y-4 text-xs">
+            <h3 className="font-bold text-lg">{editingRest ? "Edit Restaurant" : "Add Restaurant"}</h3>
+            <input type="text" placeholder="Name *" value={restName} onChange={(e) => setRestName(e.target.value)} className="w-full rounded-xl border p-2 font-bold" />
+            <input type="text" placeholder="Address *" value={restAddress} onChange={(e) => setRestAddress(e.target.value)} className="w-full rounded-xl border p-2" />
+            <input type="text" placeholder="Category (e.g. Italian)" value={restCategory} onChange={(e) => setRestCategory(e.target.value)} className="w-full rounded-xl border p-2" />
+            <input type="text" placeholder="Image URL (optional)" value={restImage} onChange={(e) => setRestImage(e.target.value)} className="w-full rounded-xl border p-2" />
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" onClick={() => setIsRestModalOpen(false)} className="px-4 py-2 border rounded-xl font-bold">Cancel</button>
+              <button type="submit" className="px-5 py-2 bg-orange-500 text-white font-bold rounded-xl">Save</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Food Form Modal */}
+      {isFoodModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <form onSubmit={handleSaveFood} className="w-full max-w-md rounded-3xl bg-white p-6 space-y-4 text-xs">
+            <h3 className="font-bold text-lg">{editingFood ? "Edit Food Dish" : "Add Food Dish"}</h3>
+            <select value={foodRestId} onChange={(e) => setFoodRestId(e.target.value)} className="w-full rounded-xl border p-2 font-bold">
+              <option value="">Select Restaurant *</option>
+              {restaurants.map((r) => (<option key={r._id} value={r._id}>{r.name}</option>))}
+            </select>
+            <input type="text" placeholder="Dish Name *" value={foodName} onChange={(e) => setFoodName(e.target.value)} className="w-full rounded-xl border p-2 font-bold" />
+            <textarea placeholder="Description" value={foodDesc} onChange={(e) => setFoodDesc(e.target.value)} className="w-full rounded-xl border p-2" />
+            <input type="number" placeholder="Price (₹)" value={foodPrice} onChange={(e) => setFoodPrice(Number(e.target.value))} className="w-full rounded-xl border p-2 font-bold" />
+            <input type="text" placeholder="Image URL (optional)" value={foodImage} onChange={(e) => setFoodImage(e.target.value)} className="w-full rounded-xl border p-2" />
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" onClick={() => setIsFoodModalOpen(false)} className="px-4 py-2 border rounded-xl font-bold">Cancel</button>
+              <button type="submit" className="px-5 py-2 bg-orange-500 text-white font-bold rounded-xl">Save</button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
