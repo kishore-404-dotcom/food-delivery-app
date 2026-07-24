@@ -1,23 +1,30 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  FaShoppingCart,
   FaBars,
-  FaTimes,
-  FaUser,
-  FaSignOutAlt,
-  FaUserShield,
+  FaBell,
   FaClipboardList,
   FaHeart,
-  FaBell,
+  FaShoppingCart,
+  FaSignOutAlt,
+  FaTimes,
+  FaUser,
+  FaUserShield,
 } from "react-icons/fa";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
-import { useWishlist } from "../hooks/useWishlist";
 import { useRealtime } from "../hooks/useRealtime";
+import { useWishlist } from "../hooks/useWishlist";
+
+const navigationLinks = [
+  { label: "Home", scrollTo: "top" },
+  { label: "Menu", scrollTo: "menu" },
+  { label: "Why Us", scrollTo: "why-us" },
+  { label: "Contact", scrollTo: "contact" },
+] as const;
 
 function Navbar() {
-  const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, loading, logout } = useAuth();
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
   const { unreadNotifications } = useRealtime();
@@ -25,40 +32,79 @@ function Navbar() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const navigate = useNavigate();
 
+  const closeMenus = () => {
+    setIsMenuOpen(false);
+    setIsUserMenuOpen(false);
+  };
+
   const handleLogout = () => {
     logout();
-    setIsUserMenuOpen(false);
-    setIsMenuOpen(false);
+    closeMenus();
     navigate("/login");
   };
+
+  if (loading) {
+    return (
+      <nav className="sticky top-0 z-50 bg-white shadow-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+          <span className="text-3xl font-extrabold text-orange-500">Foodie</span>
+          <div
+            className="h-10 w-28 animate-pulse rounded-xl bg-orange-100"
+            aria-hidden="true"
+          />
+        </div>
+      </nav>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return (
+      <nav className="sticky top-0 z-50 bg-white shadow-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
+          <span className="text-3xl font-extrabold text-orange-500">Foodie</span>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              to="/login"
+              className="rounded-xl border border-orange-500 px-4 py-2 text-sm font-semibold text-orange-500 transition hover:bg-orange-50"
+            >
+              Login
+            </Link>
+            <Link
+              to="/register"
+              className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600"
+            >
+              Register
+            </Link>
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <nav className="sticky top-0 z-50 bg-white shadow-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        {/* Logo */}
-        <Link to="/" className="text-3xl font-extrabold text-orange-500">
+        <Link
+          to="/"
+          state={{ scrollTo: "top" }}
+          onClick={closeMenus}
+          className="text-3xl font-extrabold text-orange-500"
+        >
           Foodie
         </Link>
 
-        {/* Desktop Navigation */}
         <ul className="hidden items-center gap-8 font-medium text-gray-700 md:flex">
-          <li>
-            <Link to="/" className="hover:text-orange-500 transition">
-              Home
-            </Link>
-          </li>
-
-          <li>
-            <Link to="/restaurants" className="hover:text-orange-500 transition">
-              Restaurants
-            </Link>
-          </li>
-
-          <li>
-            <Link to="/foods" className="hover:text-orange-500 transition">
-              Food Menu
-            </Link>
-          </li>
+          {navigationLinks.map((link) => (
+            <li key={link.label}>
+              <Link
+                to="/"
+                state={{ scrollTo: link.scrollTo }}
+                className="transition hover:text-orange-500"
+              >
+                {link.label}
+              </Link>
+            </li>
+          ))}
 
           {isAdmin && (
             <li>
@@ -72,131 +118,107 @@ function Navbar() {
           )}
         </ul>
 
-        {/* Desktop Right Side */}
         <div className="hidden items-center gap-6 md:flex">
-          {/* Cart Icon */}
           <Link
             to="/cart"
             aria-label={`Shopping cart with ${cartCount} items`}
-            className="relative text-gray-700 hover:text-orange-500 transition"
+            className="relative text-gray-700 transition hover:text-orange-500"
           >
             <FaShoppingCart size={22} />
-            <span className="absolute -right-2.5 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-xs font-bold text-white shadow">
+            <span className="absolute -right-2.5 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1 text-xs font-bold text-white shadow">
               {cartCount}
             </span>
           </Link>
 
-          {/* User Auth Section */}
-          {isAuthenticated && user ? (
-            <>
-              <Link
-                to="/notifications"
-                aria-label={`${unreadNotifications} unread notifications`}
-                className="relative text-gray-700 transition hover:text-orange-500"
-              >
-                <FaBell size={21} />
-                {unreadNotifications > 0 && (
-                  <span className="absolute -right-2.5 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-bold text-white shadow">
-                    {unreadNotifications > 99 ? "99+" : unreadNotifications}
-                  </span>
-                )}
-              </Link>
-              <div className="relative">
-              <button
-                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="flex items-center gap-2 rounded-full border bg-gray-50 px-4 py-2 text-sm font-semibold text-gray-800 transition hover:bg-gray-100"
-              >
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-500 text-xs text-white">
-                  <FaUser />
-                </div>
-                <span>{user.name}</span>
-                {isAdmin && (
-                  <span className="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold text-orange-600">
-                    ADMIN
-                  </span>
-                )}
-              </button>
+          <Link
+            to="/notifications"
+            aria-label={`${unreadNotifications} unread notifications`}
+            className="relative text-gray-700 transition hover:text-orange-500"
+          >
+            <FaBell size={21} />
+            {unreadNotifications > 0 && (
+              <span className="absolute -right-2.5 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-bold text-white shadow">
+                {unreadNotifications > 99 ? "99+" : unreadNotifications}
+              </span>
+            )}
+          </Link>
 
-              {/* User Dropdown */}
-              {isUserMenuOpen && (
-                <div
-                  onMouseLeave={() => setIsUserMenuOpen(false)}
-                  className="absolute right-0 mt-2 w-48 rounded-2xl bg-white p-2 shadow-xl border border-gray-100 transition"
-                >
-                  <Link
-                    to="/profile"
-                    onClick={() => setIsUserMenuOpen(false)}
-                    className="flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-500"
-                  >
-                    <FaUser className="text-gray-400" /> My Profile
-                  </Link>
-
-                  <Link
-                    to="/orders"
-                    onClick={() => setIsUserMenuOpen(false)}
-                    className="flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-500"
-                  >
-                    <FaClipboardList className="text-gray-400" /> My Orders
-                  </Link>
-
-                  <Link
-                    to="/wishlist"
-                    onClick={() => setIsUserMenuOpen(false)}
-                    className="flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-500"
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <FaHeart className="text-gray-400" /> My Wishlist
-                    </span>
-                    {wishlistCount > 0 && (
-                      <span className="rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-bold text-white">
-                        {wishlistCount}
-                      </span>
-                    )}
-                  </Link>
-
-                  {isAdmin && (
-                    <Link
-                      to="/admin"
-                      onClick={() => setIsUserMenuOpen(false)}
-                      className="flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-medium text-orange-600 hover:bg-orange-50"
-                    >
-                      <FaUserShield /> Admin Panel
-                    </Link>
-                  )}
-
-                  <hr className="my-1 border-gray-100" />
-
-                  <button
-                    onClick={handleLogout}
-                    className="flex w-full items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50"
-                  >
-                    <FaSignOutAlt /> Logout
-                  </button>
-                </div>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsUserMenuOpen((current) => !current)}
+              aria-expanded={isUserMenuOpen}
+              aria-label="Open account menu"
+              className="flex items-center gap-2 rounded-full border bg-gray-50 px-4 py-2 text-sm font-semibold text-gray-800 transition hover:bg-gray-100"
+            >
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-500 text-xs text-white">
+                <FaUser />
+              </span>
+              <span>{user.name}</span>
+              {isAdmin && (
+                <span className="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold text-orange-600">
+                  ADMIN
+                </span>
               )}
+            </button>
+
+            {isUserMenuOpen && (
+              <div className="absolute right-0 mt-2 w-48 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl">
+                <Link
+                  to="/profile"
+                  onClick={closeMenus}
+                  className="flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-500"
+                >
+                  <FaUser className="text-gray-400" /> My Profile
+                </Link>
+                <Link
+                  to="/orders"
+                  onClick={closeMenus}
+                  className="flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-500"
+                >
+                  <FaClipboardList className="text-gray-400" /> My Orders
+                </Link>
+                <Link
+                  to="/wishlist"
+                  onClick={closeMenus}
+                  className="flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-500"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <FaHeart className="text-gray-400" /> My Wishlist
+                  </span>
+                  {wishlistCount > 0 && (
+                    <span className="rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                      {wishlistCount}
+                    </span>
+                  )}
+                </Link>
+
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    onClick={closeMenus}
+                    className="flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-medium text-orange-600 hover:bg-orange-50"
+                  >
+                    <FaUserShield /> Admin Panel
+                  </Link>
+                )}
+
+                <hr className="my-1 border-gray-100" />
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50"
+                >
+                  <FaSignOutAlt /> Logout
+                </button>
               </div>
-            </>
-          ) : (
-            <div className="flex items-center gap-3">
-              <Link
-                to="/login"
-                className="rounded-xl border border-orange-500 px-4 py-2 text-sm font-semibold text-orange-500 hover:bg-orange-50"
-              >
-                Login
-              </Link>
-              <Link
-                to="/register"
-                className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 shadow-sm"
-              >
-                Register
-              </Link>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        {/* Mobile Menu Button */}
         <button
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          type="button"
+          onClick={() => setIsMenuOpen((current) => !current)}
           aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
           aria-expanded={isMenuOpen}
           className="text-2xl text-gray-700 md:hidden"
@@ -205,136 +227,104 @@ function Navbar() {
         </button>
       </div>
 
-      {/* Mobile Menu */}
       <div
         className={`overflow-hidden border-t bg-white transition-all duration-300 ease-in-out md:hidden ${
-          isMenuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0 border-t-0"
+          isMenuOpen ? "max-h-[700px] opacity-100" : "max-h-0 border-t-0 opacity-0"
         }`}
       >
         <ul className="flex flex-col">
+          {navigationLinks.map((link) => (
+            <li key={link.label}>
+              <Link
+                to="/"
+                state={{ scrollTo: link.scrollTo }}
+                onClick={closeMenus}
+                className="block border-b px-6 py-4 font-medium text-gray-700 hover:bg-orange-50"
+              >
+                {link.label}
+              </Link>
+            </li>
+          ))}
           <li>
             <Link
-              to="/"
-              onClick={() => setIsMenuOpen(false)}
-              className="block border-b px-6 py-4 text-gray-700 hover:bg-orange-50 font-medium"
+              to="/cart"
+              onClick={closeMenus}
+              className="flex items-center justify-between border-b px-6 py-4 font-medium text-gray-700 hover:bg-orange-50"
             >
-              Home
+              <span className="flex items-center gap-2"><FaShoppingCart /> Cart</span>
+              <span className="rounded-full bg-orange-500 px-2 py-0.5 text-xs text-white">
+                {cartCount}
+              </span>
             </Link>
           </li>
-
           <li>
             <Link
-              to="/restaurants"
-              onClick={() => setIsMenuOpen(false)}
-              className="block border-b px-6 py-4 text-gray-700 hover:bg-orange-50 font-medium"
+              to="/profile"
+              onClick={closeMenus}
+              className="flex items-center gap-2 border-b px-6 py-4 font-medium text-gray-700 hover:bg-orange-50"
             >
-              Restaurants
+              <FaUser /> Profile ({user.name})
             </Link>
           </li>
-
           <li>
             <Link
-              to="/foods"
-              onClick={() => setIsMenuOpen(false)}
-              className="block border-b px-6 py-4 text-gray-700 hover:bg-orange-50 font-medium"
+              to="/notifications"
+              onClick={closeMenus}
+              className="flex items-center justify-between border-b px-6 py-4 font-medium text-gray-700 hover:bg-orange-50"
             >
-              Food Menu
-            </Link>
-          </li>
-
-          {isAuthenticated ? (
-            <>
-              <li>
-                <Link
-                  to="/cart"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center justify-between border-b px-6 py-4 font-medium text-gray-700 hover:bg-orange-50"
-                >
-                  <span>🛒 Cart</span>
-                  <span className="rounded-full bg-orange-500 px-2 py-0.5 text-xs text-white">
-                    {cartCount}
-                  </span>
-                </Link>
-              </li>
-
-              <li>
-                <Link
-                  to="/profile"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="block border-b px-6 py-4 font-medium text-gray-700 hover:bg-orange-50"
-                >
-                  👤 Profile ({user?.name})
-                </Link>
-              </li>
-
-              <li>
-                <Link
-                  to="/notifications"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center justify-between border-b px-6 py-4 font-medium text-gray-700 hover:bg-orange-50"
-                >
-                  <span className="flex items-center gap-2"><FaBell /> Notifications</span>
-                  {unreadNotifications > 0 && (
-                    <span className="rounded-full bg-orange-500 px-2 py-0.5 text-xs text-white">
-                      {unreadNotifications > 99 ? "99+" : unreadNotifications}
-                    </span>
-                  )}
-                </Link>
-              </li>
-
-              <li>
-                <Link
-                  to="/orders"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="block border-b px-6 py-4 font-medium text-gray-700 hover:bg-orange-50"
-                >
-                  📦 My Orders
-                </Link>
-              </li>
-
-              {isAdmin && (
-                <li>
-                  <Link
-                    to="/admin"
-                    onClick={() => setIsMenuOpen(false)}
-                    className="block border-b px-6 py-4 font-bold text-orange-600 hover:bg-orange-50"
-                  >
-                    🛡️ Admin Dashboard
-                  </Link>
-                </li>
+              <span className="flex items-center gap-2"><FaBell /> Notifications</span>
+              {unreadNotifications > 0 && (
+                <span className="rounded-full bg-orange-500 px-2 py-0.5 text-xs text-white">
+                  {unreadNotifications > 99 ? "99+" : unreadNotifications}
+                </span>
               )}
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/orders"
+              onClick={closeMenus}
+              className="flex items-center gap-2 border-b px-6 py-4 font-medium text-gray-700 hover:bg-orange-50"
+            >
+              <FaClipboardList /> My Orders
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/wishlist"
+              onClick={closeMenus}
+              className="flex items-center justify-between border-b px-6 py-4 font-medium text-gray-700 hover:bg-orange-50"
+            >
+              <span className="flex items-center gap-2"><FaHeart /> My Wishlist</span>
+              {wishlistCount > 0 && (
+                <span className="rounded-full bg-orange-500 px-2 py-0.5 text-xs text-white">
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
+          </li>
 
-              <li>
-                <button
-                  onClick={handleLogout}
-                  className="block w-full text-left px-6 py-4 font-bold text-red-600 hover:bg-red-50"
-                >
-                  🚪 Logout
-                </button>
-              </li>
-            </>
-          ) : (
-            <>
-              <li>
-                <Link
-                  to="/login"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="block border-b px-6 py-4 font-semibold text-orange-500 hover:bg-orange-50"
-                >
-                  Login
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/register"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="block px-6 py-4 font-semibold text-gray-700 hover:bg-orange-50"
-                >
-                  Register
-                </Link>
-              </li>
-            </>
+          {isAdmin && (
+            <li>
+              <Link
+                to="/admin"
+                onClick={closeMenus}
+                className="flex items-center gap-2 border-b px-6 py-4 font-bold text-orange-600 hover:bg-orange-50"
+              >
+                <FaUserShield /> Admin Dashboard
+              </Link>
+            </li>
           )}
+
+          <li>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex w-full items-center gap-2 px-6 py-4 text-left font-bold text-red-600 hover:bg-red-50"
+            >
+              <FaSignOutAlt /> Logout
+            </button>
+          </li>
         </ul>
       </div>
     </nav>

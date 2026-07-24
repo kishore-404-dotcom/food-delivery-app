@@ -2,7 +2,7 @@ import { FaShippingFast, FaHamburger, FaStar } from "react-icons/fa";
 
 function WhyChooseUs() {
   return (
-    <section id="why-us" className="mx-auto mt-24 max-w-7xl px-6">
+    <section id="why-us" className="mx-auto mt-24 max-w-7xl scroll-mt-28 px-6">
       <h2 className="mb-12 text-center text-4xl font-bold">
         Why Choose Foodie?
       </h2>

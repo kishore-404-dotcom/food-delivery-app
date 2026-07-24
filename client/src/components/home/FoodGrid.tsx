@@ -38,10 +38,10 @@ function FoodGrid() {
   };
 
   return (
-    <section className="mx-auto mt-16 max-w-7xl px-4">
+    <section id="menu" className="mx-auto mt-16 max-w-7xl scroll-mt-28 px-4">
       <div className="mb-8 text-center">
         <h2 className="text-3xl font-bold text-gray-900">
-          Popular Foods 🍔
+          Popular Foods
         </h2>
         <p className="mt-2 text-sm text-gray-500">
           Explore delicious dishes from top rated kitchens

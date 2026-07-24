@@ -8,6 +8,7 @@ import { WishlistProvider } from "./context/WishlistContext";
 import { RealtimeProvider } from "./context/RealtimeContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AdminRoute from "./components/auth/AdminRoute";
+import GuestRoute from "./components/auth/GuestRoute";
 
 const Home = lazy(() => import("./pages/home/Home"));
 const Login = lazy(() => import("./pages/login/Login"));
@@ -49,16 +50,18 @@ function App() {
             }
           >
           <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/restaurants" element={<RestaurantsPage />} />
-            <Route path="/restaurants/:id" element={<RestaurantDetailPage />} />
-            <Route path="/foods" element={<FoodsPage />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            {/* Registration and login are the only public routes. */}
+            <Route element={<GuestRoute />}>
+              <Route path="/register" element={<Register />} />
+              <Route path="/login" element={<Login />} />
+            </Route>
 
-            {/* Protected Customer Routes */}
-            <Route element={<ProtectedRoute />}>
+            {/* The complete customer experience requires authentication. */}
+            <Route element={<ProtectedRoute redirectTo="/register" />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/restaurants" element={<RestaurantsPage />} />
+              <Route path="/restaurants/:id" element={<RestaurantDetailPage />} />
+              <Route path="/foods" element={<FoodsPage />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/orders" element={<OrdersPage />} />
@@ -66,6 +69,7 @@ function App() {
               <Route path="/wishlist" element={<WishlistPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="*" element={<NotFound />} />
             </Route>
 
             {/* Protected Admin Routes */}
@@ -73,8 +77,6 @@ function App() {
               <Route path="/admin" element={<AdminDashboard />} />
             </Route>
 
-            {/* 404 Catch All */}
-            <Route path="*" element={<NotFound />} />
           </Routes>
           </Suspense>
           </WishlistProvider>
