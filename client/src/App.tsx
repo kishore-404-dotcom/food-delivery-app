@@ -12,6 +12,7 @@ import FoodsPage from "./pages/foods/FoodsPage";
 
 import CheckoutPage from "./pages/checkout/CheckoutPage";
 import OrdersPage from "./pages/orders/OrdersPage";
+import PaymentsPage from "./pages/payments/PaymentsPage";
 
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
@@ -38,6 +39,7 @@ function App() {
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/orders" element={<OrdersPage />} />
+            <Route path="/payments" element={<PaymentsPage />} />
             <Route path="/profile" element={<Profile />} />
           </Route>
 

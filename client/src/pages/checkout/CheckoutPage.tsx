@@ -20,6 +20,10 @@ import {
 import type { CreateAddressInput } from "../../services/addressService";
 import { placeOrder } from "../../services/orderService";
 
+import PaymentModal from "../../components/payments/PaymentModal";
+import { createPayment } from "../../services/paymentService";
+import type { IPayment } from "../../types/food";
+
 function CheckoutPage() {
   const { cart, cartTotal, refreshCart } = useCart();
   const navigate = useNavigate();
@@ -35,6 +39,10 @@ function CheckoutPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [savingAddress, setSavingAddress] = useState(false);
 
+  // Payment Modal State
+  const [activePayment, setActivePayment] = useState<IPayment | null>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
   const fetchAddresses = useCallback(async () => {
     try {
       setLoadingAddresses(true);
@@ -48,7 +56,7 @@ function CheckoutPage() {
     } catch (err: unknown) {
       console.error("Failed to load addresses for checkout:", err);
       toast.error("Failed to load delivery addresses");
-    } fontFinally: {
+    } finally {
       setLoadingAddresses(false);
     }
   }, []);
@@ -100,15 +108,32 @@ function CheckoutPage() {
         deliveryAddress: selectedAddressId,
       });
 
-      await refreshCart();
-      toast.success(`Order #${order._id.substring(order._id.length - 6).toUpperCase()} placed successfully! 🎉`);
-      navigate("/orders", { replace: true });
+      if (paymentMethod === "ONLINE") {
+        const paymentData = await createPayment(order._id);
+        setActivePayment(paymentData);
+        setIsPaymentModalOpen(true);
+      } else {
+        await refreshCart();
+        toast.success(`Order #${order._id.substring(order._id.length - 6).toUpperCase()} placed successfully! 🎉`);
+        navigate("/orders", { replace: true });
+      }
     } catch (err: unknown) {
       console.error("Error placing order:", err);
       toast.error("Failed to place order. Please try again.");
     } finally {
       setPlacingOrder(false);
     }
+  };
+
+  const handlePaymentSuccess = async () => {
+    setIsPaymentModalOpen(false);
+    await refreshCart();
+    navigate("/orders", { replace: true });
+  };
+
+  const handlePaymentFailure = () => {
+    setIsPaymentModalOpen(false);
+    navigate("/orders", { replace: true });
   };
 
   if (validItems.length === 0) {
@@ -337,6 +362,15 @@ function CheckoutPage() {
         onClose={() => setIsModalOpen(false)}
         onSubmitAddress={handleSaveNewAddress}
         loading={savingAddress}
+      />
+
+      {/* Payment Gateway Simulator Modal */}
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        payment={activePayment}
+        onClose={() => setIsPaymentModalOpen(false)}
+        onSuccess={handlePaymentSuccess}
+        onFailure={handlePaymentFailure}
       />
     </div>
   );
