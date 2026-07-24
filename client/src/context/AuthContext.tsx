@@ -6,6 +6,7 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 import type { IUser } from "../types/food";
+import { getUserProfile } from "../services/userService";
 
 export interface AuthContextType {
   user: IUser | null;
@@ -33,28 +34,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Initialize auth state from localStorage
   useEffect(() => {
-    try {
-      const storedToken = localStorage.getItem("token");
-      const storedUser = localStorage.getItem("user");
+    const initAuth = async () => {
+      try {
+        const storedToken = localStorage.getItem("token");
+        const storedUser = localStorage.getItem("user");
 
-      if (storedToken) {
-        setToken(storedToken);
-      }
-
-      if (storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser) as IUser;
-          setUser(parsedUser);
-        } catch (e) {
-          console.error("Failed to parse stored user data:", e);
-          localStorage.removeItem("user");
+        if (storedToken) {
+          setToken(storedToken);
+          try {
+            const freshUser = await getUserProfile();
+            setUser(freshUser);
+            localStorage.setItem("user", JSON.stringify(freshUser));
+          } catch (e) {
+            console.error("Failed to fetch fresh profile from API:", e);
+            if (storedUser) {
+              setUser(JSON.parse(storedUser));
+            }
+          }
         }
+      } catch (err) {
+        console.error("Error reading authentication data from storage:", err);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Error reading authentication data from storage:", err);
-    } finally {
-      setLoading(false);
-    }
+    };
+
+    initAuth();
   }, []);
 
   // Login handler

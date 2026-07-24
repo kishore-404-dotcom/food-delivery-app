@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
 import {
   FaUser,
   FaMapMarkerAlt,
@@ -7,6 +8,10 @@ import {
   FaEnvelope,
   FaPhone,
   FaShieldAlt,
+  FaClipboardList,
+  FaHeart,
+  FaCreditCard,
+  FaBell,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useAuth } from "../../hooks/useAuth";
@@ -108,8 +113,8 @@ function Profile() {
     <div className="min-h-screen bg-gray-50 px-4 py-8">
       <div className="mx-auto max-w-6xl space-y-8">
         {/* User Info Header Card */}
-        <div className="overflow-hidden rounded-3xl bg-white p-8 shadow-sm border">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="overflow-hidden rounded-3xl bg-white p-8 shadow-sm border space-y-6">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between border-b pb-6">
             <div className="flex items-center gap-5">
               <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-orange-500 text-3xl text-white font-bold shadow-md">
                 {user?.name ? user.name.charAt(0).toUpperCase() : <FaUser />}
@@ -138,6 +143,61 @@ function Profile() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Quick Nav Cards */}
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <Link
+              to="/orders"
+              className="flex items-center gap-3 rounded-2xl bg-orange-50/60 p-4 border border-orange-100 text-gray-800 transition hover:bg-orange-100 hover:border-orange-300"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500 text-white font-bold">
+                <FaClipboardList />
+              </div>
+              <div>
+                <p className="text-sm font-bold">My Orders</p>
+                <p className="text-[11px] text-gray-500">Track history</p>
+              </div>
+            </Link>
+
+            <Link
+              to="/wishlist"
+              className="flex items-center gap-3 rounded-2xl bg-orange-50/60 p-4 border border-orange-100 text-gray-800 transition hover:bg-orange-100 hover:border-orange-300"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500 text-white font-bold">
+                <FaHeart />
+              </div>
+              <div>
+                <p className="text-sm font-bold">My Wishlist</p>
+                <p className="text-[11px] text-gray-500">Saved foods</p>
+              </div>
+            </Link>
+
+            <Link
+              to="/payments"
+              className="flex items-center gap-3 rounded-2xl bg-orange-50/60 p-4 border border-orange-100 text-gray-800 transition hover:bg-orange-100 hover:border-orange-300"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500 text-white font-bold">
+                <FaCreditCard />
+              </div>
+              <div>
+                <p className="text-sm font-bold">My Payments</p>
+                <p className="text-[11px] text-gray-500">Transactions</p>
+              </div>
+            </Link>
+
+            <Link
+              to="/notifications"
+              className="flex items-center gap-3 rounded-2xl bg-orange-50/60 p-4 border border-orange-100 text-gray-800 transition hover:bg-orange-100 hover:border-orange-300"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500 text-white font-bold">
+                <FaBell />
+              </div>
+              <div>
+                <p className="text-sm font-bold">Notifications</p>
+                <p className="text-[11px] text-gray-500">Updates & alerts</p>
+              </div>
+            </Link>
           </div>
         </div>
 
