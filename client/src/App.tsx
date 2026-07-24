@@ -10,6 +10,9 @@ import RestaurantsPage from "./pages/restaurants/RestaurantsPage";
 import RestaurantDetailPage from "./pages/restaurants/RestaurantDetailPage";
 import FoodsPage from "./pages/foods/FoodsPage";
 
+import CheckoutPage from "./pages/checkout/CheckoutPage";
+import OrdersPage from "./pages/orders/OrdersPage";
+
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -33,6 +36,8 @@ function App() {
           {/* Protected Customer Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/orders" element={<OrdersPage />} />
             <Route path="/profile" element={<Profile />} />
           </Route>
 
