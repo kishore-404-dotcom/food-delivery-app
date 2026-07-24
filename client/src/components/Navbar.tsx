@@ -28,7 +28,7 @@ function Navbar() {
           </li>
 
           <li>
-            <a href="#categories">Menu</a>
+            <Link to="/foods">Food Menu</Link>
           </li>
 
           <li>
@@ -104,13 +104,13 @@ function Navbar() {
 
           {/* Menu */}
           <li>
-            <a
-              href="#categories"
+            <Link
+              to="/foods"
               onClick={() => setIsMenuOpen(false)}
               className="block border-b px-6 py-4 hover:bg-orange-50"
             >
-              Menu
-            </a>
+              Food Menu
+            </Link>
           </li>
 
           {/* Why Us */}

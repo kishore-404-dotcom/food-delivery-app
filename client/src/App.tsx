@@ -10,6 +10,7 @@ import NotFound from "./pages/notFound/NotFound";
 import Register from "./pages/register/Register";
 import RestaurantsPage from "./pages/restaurants/RestaurantsPage";
 import RestaurantDetailPage from "./pages/restaurants/RestaurantDetailPage";
+import FoodsPage from "./pages/foods/FoodsPage";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/restaurants" element={<RestaurantsPage />} />
         <Route path="/restaurants/:id" element={<RestaurantDetailPage />} />
+        <Route path="/foods" element={<FoodsPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/cart" element={<Cart />} />
