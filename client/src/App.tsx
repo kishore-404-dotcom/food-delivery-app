@@ -6,11 +6,15 @@ import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { WishlistProvider } from "./context/WishlistContext";
 import { RealtimeProvider } from "./context/RealtimeContext";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AdminRoute from "./components/auth/AdminRoute";
 import GuestRoute from "./components/auth/GuestRoute";
+import CustomerRoute from "./components/auth/CustomerRoute";
+import RestaurantOwnerRoute from "./components/auth/RestaurantOwnerRoute";
 
 const Home = lazy(() => import("./pages/home/Home"));
+const CustomerDashboard = lazy(
+  () => import("./pages/dashboard/CustomerDashboard")
+);
 const Login = lazy(() => import("./pages/login/Login"));
 const Register = lazy(() => import("./pages/register/Register"));
 const Cart = lazy(() => import("./pages/cart/Cart"));
@@ -29,6 +33,9 @@ const NotificationsPage = lazy(
   () => import("./pages/notifications/NotificationsPage")
 );
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const RestaurantDashboard = lazy(
+  () => import("./pages/restaurantOwner/RestaurantDashboard")
+);
 
 function App() {
   return (
@@ -57,8 +64,9 @@ function App() {
             </Route>
 
             {/* The complete customer experience requires authentication. */}
-            <Route element={<ProtectedRoute redirectTo="/register" />}>
+            <Route element={<CustomerRoute />}>
               <Route path="/" element={<Home />} />
+              <Route path="/dashboard" element={<CustomerDashboard />} />
               <Route path="/restaurants" element={<RestaurantsPage />} />
               <Route path="/restaurants/:id" element={<RestaurantDetailPage />} />
               <Route path="/foods" element={<FoodsPage />} />
@@ -75,6 +83,13 @@ function App() {
             {/* Protected Admin Routes */}
             <Route element={<AdminRoute />}>
               <Route path="/admin" element={<AdminDashboard />} />
+            </Route>
+
+            <Route element={<RestaurantOwnerRoute />}>
+              <Route
+                path="/restaurant/dashboard"
+                element={<RestaurantDashboard />}
+              />
             </Route>
 
           </Routes>

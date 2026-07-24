@@ -9,6 +9,7 @@ export interface IOrderItem {
 
 export interface IOrder extends Document {
   user: mongoose.Types.ObjectId;
+  restaurant?: mongoose.Types.ObjectId;
   deliveryAddress: mongoose.Types.ObjectId;
   items: IOrderItem[];
   totalAmount: number;
@@ -31,6 +32,11 @@ const orderSchema = new Schema<IOrder>(
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
+    },
+
+    restaurant: {
+      type: Schema.Types.ObjectId,
+      ref: "Restaurant",
     },
 
     deliveryAddress: {
@@ -117,6 +123,7 @@ const orderSchema = new Schema<IOrder>(
 );
 
 orderSchema.index({ user: 1 });
+orderSchema.index({ restaurant: 1, createdAt: -1 });
 
 orderSchema.index({ deliveryAddress: 1 });
 

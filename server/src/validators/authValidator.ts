@@ -17,6 +17,11 @@ export const registerValidator = [
   body("phone")
     .notEmpty()
     .withMessage("Phone is required"),
+
+  body("role")
+    .optional()
+    .isIn(["customer", "restaurant_owner"])
+    .withMessage("Invalid registration type"),
 ];
 
 export const loginValidator = [

@@ -17,6 +17,13 @@ export const getAllRestaurants = async (): Promise<IRestaurant[]> => {
   return response.data.data;
 };
 
+export const getMyRestaurant = async (): Promise<IRestaurant | null> => {
+  const response = await api.get<ApiResponse<IRestaurant | null>>(
+    "/restaurants/mine"
+  );
+  return response.data.data;
+};
+
 export const searchRestaurants = async (name: string): Promise<IRestaurant[]> => {
   const response = await api.get<ApiResponse<IRestaurant[]>>("/restaurants/search", {
     params: { name },

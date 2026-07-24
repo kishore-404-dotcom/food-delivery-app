@@ -9,7 +9,7 @@ import { JwtPayload } from "./types/jwtPayload";
 
 interface AuthenticatedSocketData {
   userId: string;
-  role: "customer" | "admin";
+  role: "customer" | "restaurant_owner" | "admin";
 }
 
 let io: Server | null = null;
@@ -65,6 +65,9 @@ export const authenticateSocketToken = async (
 export const getSocketRooms = (auth: AuthenticatedSocketData): string[] => {
   const rooms = [`user:${auth.userId}`];
   if (auth.role === "admin") rooms.push("admin");
+  if (auth.role === "restaurant_owner") {
+    rooms.push(`restaurant-owner:${auth.userId}`);
+  }
   return rooms;
 };
 
@@ -106,4 +109,12 @@ export const emitToUser = (userId: string, event: string, payload: unknown): voi
 
 export const emitToAdmins = (event: string, payload: unknown): void => {
   io?.to("admin").emit(event, payload);
+};
+
+export const emitToRestaurantOwner = (
+  ownerId: string,
+  event: string,
+  payload: unknown
+): void => {
+  io?.to(`restaurant-owner:${ownerId}`).emit(event, payload);
 };

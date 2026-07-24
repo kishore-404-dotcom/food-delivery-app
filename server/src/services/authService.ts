@@ -11,8 +11,9 @@ export const registerUser = async (userData: {
   email: string;
   password: string;
   phone: string;
+  role?: "customer" | "restaurant_owner";
 }) => {
-  const { name, email, password, phone } = userData;
+  const { name, email, password, phone, role = "customer" } = userData;
 
   // Check if email already exists
   const existingUser = await User.findOne({ email });
@@ -30,6 +31,8 @@ export const registerUser = async (userData: {
     email,
     password: hashedPassword,
     phone,
+    role,
+    ...(role === "restaurant_owner" ? { restaurantStatus: "pending" } : {}),
   });
 
   // Remove password before returning

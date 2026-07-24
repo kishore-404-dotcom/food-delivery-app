@@ -67,3 +67,34 @@ export const adminOnly = async (
     next(error);
   }
 };
+
+export const restaurantOwnerOrAdmin = async (
+  req: AuthRequest,
+  _res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const user = await User.findById(req.user?.id);
+
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    if (user.role === "admin") {
+      next();
+      return;
+    }
+
+    if (user.role !== "restaurant_owner") {
+      throw new ApiError(403, "Access denied. Restaurant owner only.");
+    }
+
+    if (user.restaurantStatus !== "approved") {
+      throw new ApiError(403, "Restaurant owner account is awaiting admin approval.");
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};

@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import Cart from "../models/cart";
 import Order from "../models/order";
 import Address from "../models/address";
+import Food from "../models/food";
+import Restaurant from "../models/restaurant";
 
 import { ApiError } from "../utils/apiError";
 import { calculateOrderTotal } from "../utils/orderTotal";
@@ -56,11 +58,13 @@ export const placeOrderService = async (
     }
 
     let subtotal = 0;
+    const restaurantIds = new Set<string>();
 
     const orderItems = cart.items.map(
       (item: any) => {
 
         const price = item.food.price;
+        restaurantIds.add(item.food.restaurant.toString());
 
         subtotal +=
           price * item.quantity;
@@ -75,6 +79,15 @@ export const placeOrderService = async (
       }
     );
 
+    if (restaurantIds.size !== 1) {
+      throw new ApiError(
+        400,
+        "All items in an order must be from the same restaurant"
+      );
+    }
+
+    const [restaurantId] = Array.from(restaurantIds);
+
     const couponResult = couponCode
       ? await applyCouponService(couponCode, subtotal)
       : null;
@@ -87,6 +100,7 @@ export const placeOrderService = async (
       [
         {
           user: userId,
+          restaurant: restaurantId,
           deliveryAddress,
           items: orderItems,
           totalAmount,
@@ -153,6 +167,51 @@ export const getAllOrdersService =
       });
 
   };
+
+export const getRestaurantOrdersService = async (ownerId: string) => {
+  const restaurantIds = await Restaurant.find({ owner: ownerId }).distinct("_id");
+  const foodIds = await Food.find({
+    restaurant: { $in: restaurantIds },
+  }).distinct("_id");
+
+  return Order.find({
+    $or: [
+      { restaurant: { $in: restaurantIds } },
+      {
+        restaurant: { $exists: false },
+        "items.food": { $in: foodIds },
+      },
+    ],
+  })
+    .populate("user", "name email phone")
+    .populate("deliveryAddress")
+    .sort({ createdAt: -1 });
+};
+
+export const assertOrderBelongsToRestaurantOwner = async (
+  orderId: string,
+  ownerId: string
+) => {
+  const restaurantIds = await Restaurant.find({ owner: ownerId }).distinct("_id");
+  const foodIds = await Food.find({
+    restaurant: { $in: restaurantIds },
+  }).distinct("_id");
+
+  const order = await Order.findOne({
+    _id: orderId,
+    $or: [
+      { restaurant: { $in: restaurantIds } },
+      {
+        restaurant: { $exists: false },
+        "items.food": { $in: foodIds },
+      },
+    ],
+  });
+
+  if (!order) {
+    throw new ApiError(403, "You can only manage orders for your restaurant");
+  }
+};
 
 // Update Order Status
 export const updateOrderStatusService = async (

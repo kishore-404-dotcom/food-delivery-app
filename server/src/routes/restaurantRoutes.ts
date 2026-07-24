@@ -6,12 +6,16 @@ import {
   searchRestaurants,
   getRestaurantsByCategory,
   getRestaurantById,
+  getMyRestaurant,
   updateRestaurant,
   updateRestaurantImage,
   deleteRestaurant,
 } from "../controllers/restaurantController";
 
-import { protect, adminOnly } from "../middleware/authMiddleware";
+import {
+  protect,
+  restaurantOwnerOrAdmin,
+} from "../middleware/authMiddleware";
 import upload from "../middleware/uploadMiddleware";
 import validateRequest from "../middleware/validateRequest";
 import {
@@ -27,7 +31,7 @@ const router = express.Router();
 router.post(
   "/",
   protect,
-  adminOnly,
+  restaurantOwnerOrAdmin,
   upload.single("image"),
   RestaurantValidator,
   validateRequest,
@@ -36,6 +40,13 @@ router.post(
 
 // Get all restaurants
 router.get("/", getAllRestaurants);
+
+router.get(
+  "/mine",
+  protect,
+  restaurantOwnerOrAdmin,
+  getMyRestaurant
+);
 
 // Search restaurants
 router.get("/search", restaurantSearchValidator, validateRequest, searchRestaurants);
@@ -50,7 +61,7 @@ router.get("/:id", restaurantIdValidator, validateRequest, getRestaurantById);
 router.put(
   "/:id",
   protect,
-  adminOnly,
+  restaurantOwnerOrAdmin,
   upload.single("image"),
   restaurantUpdateValidator,
   validateRequest,
@@ -61,7 +72,7 @@ router.put(
 router.put(
   "/:id/image",
   protect,
-  adminOnly,
+  restaurantOwnerOrAdmin,
   upload.single("image"),
   restaurantIdValidator,
   validateRequest,
@@ -72,7 +83,7 @@ router.put(
 router.delete(
   "/:id",
   protect,
-  adminOnly,
+  restaurantOwnerOrAdmin,
   restaurantIdValidator,
   validateRequest,
   deleteRestaurant

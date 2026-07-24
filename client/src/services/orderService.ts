@@ -22,6 +22,13 @@ export const getAllOrders = async (): Promise<IOrder[]> => {
   return response.data.data;
 };
 
+export const getRestaurantOrders = async (): Promise<IOrder[]> => {
+  const response = await api.get<ApiResponse<IOrder[]>>(
+    "/orders/restaurant-orders"
+  );
+  return response.data.data;
+};
+
 export const updateOrderStatus = async (
   id: string,
   orderStatus: string

@@ -12,6 +12,7 @@ import {
 import {
   createFood,
   getFoods,
+  getMyFoods,
   searchFoods,
   getFoodsByCategory,
   getFood,
@@ -20,7 +21,10 @@ import {
   deleteFood,
 } from "../controllers/foodController";
 
-import { protect, adminOnly } from "../middleware/authMiddleware";
+import {
+  protect,
+  restaurantOwnerOrAdmin,
+} from "../middleware/authMiddleware";
 
 const router = express.Router();
 
@@ -28,7 +32,7 @@ const router = express.Router();
 router.post(
   "/",
   protect,
-  adminOnly,
+  restaurantOwnerOrAdmin,
   upload.single("image"),
   foodValidator,
   validateRequest,
@@ -37,6 +41,13 @@ router.post(
 
 // Get all foods
 router.get("/", getFoods);
+
+router.get(
+  "/mine",
+  protect,
+  restaurantOwnerOrAdmin,
+  getMyFoods
+);
 
 // Search foods
 router.get("/search", foodSearchValidator, validateRequest, searchFoods);
@@ -51,7 +62,7 @@ router.get("/:id", foodIdValidator, validateRequest, getFood);
 router.put(
   "/:id",
   protect,
-  adminOnly,
+  restaurantOwnerOrAdmin,
   upload.single("image"),
   foodUpdateValidator,
   validateRequest,
@@ -62,7 +73,7 @@ router.put(
 router.put(
   "/:id/image",
   protect,
-  adminOnly,
+  restaurantOwnerOrAdmin,
   upload.single("image"),
   foodIdValidator,
   validateRequest,
@@ -73,7 +84,7 @@ router.put(
 router.delete(
   "/:id",
   protect,
-  adminOnly,
+  restaurantOwnerOrAdmin,
   foodIdValidator,
   validateRequest,
   deleteFood

@@ -14,6 +14,7 @@ type RegisterForm = {
   phone: string;
   password: string;
   confirmPassword: string;
+  role: "customer" | "restaurant_owner";
 };
 
 type RegisterResponse = {
@@ -33,7 +34,9 @@ function Register() {
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm<RegisterForm>();
+  } = useForm<RegisterForm>({
+    defaultValues: { role: "customer" },
+  });
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -55,6 +58,7 @@ function Register() {
         email: formData.email.trim().toLowerCase(),
         phone: formData.phone.trim(),
         password: formData.password,
+        role: formData.role,
       };
 
       const response = await api.post<RegisterResponse>(
@@ -115,7 +119,7 @@ function Register() {
         </h1>
 
         <p className="mb-7 text-center text-gray-500">
-          Register to start ordering your favourite food.
+          Create a customer account or register as a restaurant partner.
         </p>
 
         <form
@@ -123,6 +127,41 @@ function Register() {
           className="space-y-5"
           noValidate
         >
+          <fieldset>
+            <legend className="mb-2 block font-medium text-gray-700">
+              Account Type
+            </legend>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="cursor-pointer">
+                <input
+                  type="radio"
+                  value="customer"
+                  className="peer sr-only"
+                  disabled={loading}
+                  {...register("role", { required: true })}
+                />
+                <span className="block rounded-xl border border-gray-300 p-3 text-center text-sm font-semibold text-gray-700 transition peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-600">
+                  Order Food
+                </span>
+              </label>
+              <label className="cursor-pointer">
+                <input
+                  type="radio"
+                  value="restaurant_owner"
+                  className="peer sr-only"
+                  disabled={loading}
+                  {...register("role", { required: true })}
+                />
+                <span className="block rounded-xl border border-gray-300 p-3 text-center text-sm font-semibold text-gray-700 transition peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-600">
+                  Restaurant Partner
+                </span>
+              </label>
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              Restaurant partner accounts require administrator approval.
+            </p>
+          </fieldset>
+
           <div>
             <label
               htmlFor="name"

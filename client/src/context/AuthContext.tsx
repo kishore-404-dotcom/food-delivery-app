@@ -14,6 +14,7 @@ export interface AuthContextType {
   loading: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isRestaurantOwner: boolean;
   login: (token: string, user: IUser) => void;
   logout: () => void;
   updateUser: (user: IUser) => void;
@@ -101,6 +102,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const isAuthenticated = Boolean(token && user);
   const isAdmin = Boolean(user && user.role === "admin");
+  const isRestaurantOwner = Boolean(user && user.role === "restaurant_owner");
 
   return (
     <AuthContext.Provider
@@ -110,6 +112,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         loading,
         isAuthenticated,
         isAdmin,
+        isRestaurantOwner,
         login,
         logout,
         updateUser,

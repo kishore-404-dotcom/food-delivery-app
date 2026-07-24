@@ -5,14 +5,22 @@ import { AuthRequest } from "../middleware/authMiddleware";
 
 import { ApiResponse } from "../utils/apiResponse";
 import logger from "../config/logger";
-import { emitToAdmins, emitToUser } from "../socket";
+import {
+  emitToAdmins,
+  emitToRestaurantOwner,
+  emitToUser,
+} from "../socket";
 import { createInAppNotificationService } from "../services/notificationService";
+import Restaurant from "../models/restaurant";
+import User from "../models/user";
 
 import {
   placeOrderService,
   getMyOrdersService,
   getAllOrdersService,
   updateOrderStatusService,
+  getRestaurantOrdersService,
+  assertOrderBelongsToRestaurantOwner,
 } from "../services/orderService";
 
 // Place Order
@@ -40,6 +48,16 @@ export const placeOrder = asyncHandler(
 
     emitToUser(req.user!.id, "order:created", order);
     emitToAdmins("order:created", order);
+    if (order.restaurant) {
+      const restaurant = await Restaurant.findById(order.restaurant).select("owner");
+      if (restaurant) {
+        emitToRestaurantOwner(
+          restaurant.owner.toString(),
+          "order:created",
+          order
+        );
+      }
+    }
 
     try {
       const notification = await createInAppNotificationService(
@@ -101,6 +119,16 @@ export const getAllOrders = asyncHandler(
   }
 );
 
+export const getRestaurantOrders = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const orders = await getRestaurantOrdersService(req.user!.id);
+
+    res.status(200).json(
+      new ApiResponse(true, "Restaurant orders fetched successfully", orders)
+    );
+  }
+);
+
 
 // Update order status
 export const updateOrderStatus = asyncHandler(
@@ -110,6 +138,11 @@ export const updateOrderStatus = asyncHandler(
       id: string;
     };
 
+    const currentUser = await User.findById(req.user!.id).select("role");
+    if (currentUser?.role === "restaurant_owner") {
+      await assertOrderBelongsToRestaurantOwner(id, req.user!.id);
+    }
+
     const order = await updateOrderStatusService(
       id,
       req.body.orderStatus
@@ -118,6 +151,16 @@ export const updateOrderStatus = asyncHandler(
     const userId = order.user.toString();
     emitToUser(userId, "order:status-updated", order);
     emitToAdmins("order:status-updated", order);
+    if (order.restaurant) {
+      const restaurant = await Restaurant.findById(order.restaurant).select("owner");
+      if (restaurant) {
+        emitToRestaurantOwner(
+          restaurant.owner.toString(),
+          "order:status-updated",
+          order
+        );
+      }
+    }
 
     try {
       const notification = await createInAppNotificationService(

@@ -16,6 +16,11 @@ export const getFoods = async (): Promise<IFood[]> => {
   return response.data.data;
 };
 
+export const getMyFoods = async (): Promise<IFood[]> => {
+  const response = await api.get<ApiResponse<IFood[]>>("/foods/mine");
+  return response.data.data;
+};
+
 export const searchFoods = async (name: string): Promise<IFood[]> => {
   const response = await api.get<ApiResponse<IFood[]>>("/foods/search", {
     params: { name },

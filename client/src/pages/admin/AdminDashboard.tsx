@@ -13,6 +13,7 @@ import {
   FaEdit,
   FaBoxOpen,
   FaImage,
+  FaStore,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import axios from "axios";
@@ -35,6 +36,10 @@ import {
   deleteFood,
 } from "../../services/foodService";
 import { getDashboardOverview, type DashboardOverview } from "../../services/adminService";
+import {
+  getRestaurantOwners,
+  updateRestaurantOwnerStatus,
+} from "../../services/restaurantOwnerService";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -45,6 +50,7 @@ const DEFAULT_FOOD_IMAGE =
 
 type AdminTab =
   | "overview"
+  | "owners"
   | "restaurants"
   | "foods"
   | "orders"
@@ -70,6 +76,7 @@ export function AdminDashboard() {
   const [coupons, setCoupons] = useState<ICoupon[]>([]);
   const [payments, setPayments] = useState<IPayment[]>([]);
   const [reviews, setReviews] = useState<IReview[]>([]);
+  const [restaurantOwners, setRestaurantOwners] = useState<IUser[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -116,6 +123,7 @@ export function AdminDashboard() {
         couponsRes,
         paymentsRes,
         reviewsRes,
+        ownersRes,
       ] = await Promise.allSettled([
         getDashboardOverview(),
         getAllRestaurants(),
@@ -124,6 +132,7 @@ export function AdminDashboard() {
         getCoupons(),
         getAllPayments(),
         getAllReviews(),
+        getRestaurantOwners(),
       ]);
 
       if (overviewRes.status === "fulfilled") setOverview(overviewRes.value);
@@ -133,6 +142,9 @@ export function AdminDashboard() {
       if (couponsRes.status === "fulfilled") setCoupons(couponsRes.value);
       if (paymentsRes.status === "fulfilled") setPayments(paymentsRes.value);
       if (reviewsRes.status === "fulfilled") setReviews(reviewsRes.value);
+      if (ownersRes.status === "fulfilled") {
+        setRestaurantOwners(ownersRes.value);
+      }
     } catch (err: unknown) {
       console.error("Error loading admin dashboard data:", err);
       toast.error("Failed to load admin analytics");
@@ -213,6 +225,19 @@ export function AdminDashboard() {
     } catch (err: unknown) {
       console.error("Error deleting restaurant:", err);
       toast.error("Failed to delete restaurant");
+    }
+  };
+
+  const handleOwnerStatus = async (
+    id: string,
+    status: "approved" | "rejected"
+  ) => {
+    try {
+      await updateRestaurantOwnerStatus(id, status);
+      toast.success(`Restaurant owner ${status}`);
+      await fetchAdminData();
+    } catch (error) {
+      toast.error(getUploadErrorMessage(error));
     }
   };
 
@@ -377,6 +402,11 @@ export function AdminDashboard() {
         <div className="flex overflow-x-auto gap-2 border-b pb-2">
           {[
             { id: "overview", label: "Overview", icon: FaChartLine },
+            {
+              id: "owners",
+              label: `Restaurant Owners (${restaurantOwners.length})`,
+              icon: FaStore,
+            },
             { id: "restaurants", label: `Restaurants (${restaurants.length})`, icon: FaUtensils },
             { id: "foods", label: `Foods (${foods.length})`, icon: FaBoxOpen },
             { id: "orders", label: `Orders (${orders.length})`, icon: FaShoppingBag },
@@ -408,6 +438,69 @@ export function AdminDashboard() {
             <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-orange-500 border-t-transparent"></div>
             <p className="mt-4 font-medium text-gray-600">Fetching administrative state...</p>
           </div>
+        )}
+
+        {!loading && activeTab === "owners" && (
+          <section className="rounded-3xl border bg-white p-6 shadow-sm">
+            <div className="mb-5">
+              <h2 className="text-xl font-black text-gray-900">
+                Restaurant Partner Applications
+              </h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Approve partners before they can create or manage a restaurant.
+              </p>
+            </div>
+            {restaurantOwners.length === 0 ? (
+              <p className="rounded-2xl bg-gray-50 p-8 text-center text-gray-500">
+                No restaurant partner applications.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {restaurantOwners.map((owner) => (
+                  <article
+                    key={owner._id}
+                    className="flex flex-col gap-4 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div>
+                      <p className="font-bold text-gray-900">{owner.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {owner.email} · {owner.phone}
+                      </p>
+                      <span
+                        className={`mt-2 inline-block rounded-full px-3 py-1 text-xs font-bold uppercase ${
+                          owner.restaurantStatus === "approved"
+                            ? "bg-green-50 text-green-700"
+                            : owner.restaurantStatus === "rejected"
+                              ? "bg-red-50 text-red-700"
+                              : "bg-orange-50 text-orange-700"
+                        }`}
+                      >
+                        {owner.restaurantStatus || "pending"}
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOwnerStatus(owner._id, "approved")}
+                        disabled={owner.restaurantStatus === "approved"}
+                        className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-40"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOwnerStatus(owner._id, "rejected")}
+                        disabled={owner.restaurantStatus === "rejected"}
+                        className="rounded-xl bg-red-50 px-4 py-2 text-sm font-bold text-red-700 disabled:opacity-40"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
         )}
 
         {/* TAB 1: OVERVIEW */}

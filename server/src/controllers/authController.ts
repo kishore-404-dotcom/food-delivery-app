@@ -12,7 +12,13 @@ import { AuthRequest } from "../middleware/authMiddleware";
 
 // Register
 export const register = asyncHandler(async (req: Request, res: Response) => {
-  const user = await registerUser(req.body);
+  const user = await registerUser({
+    name: req.body.name,
+    email: req.body.email,
+    password: req.body.password,
+    phone: req.body.phone,
+    role: req.body.role,
+  });
 
   res.status(201).json(
     new ApiResponse(true, "User registered successfully", user)

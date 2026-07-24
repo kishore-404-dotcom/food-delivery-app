@@ -10,6 +10,8 @@ import {
   FaTimes,
   FaUser,
   FaUserShield,
+  FaStore,
+  FaTachometerAlt,
 } from "react-icons/fa";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
@@ -24,7 +26,14 @@ const navigationLinks = [
 ] as const;
 
 function Navbar() {
-  const { user, isAuthenticated, isAdmin, loading, logout } = useAuth();
+  const {
+    user,
+    isAuthenticated,
+    isAdmin,
+    isRestaurantOwner,
+    loading,
+    logout,
+  } = useAuth();
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
   const { unreadNotifications } = useRealtime();
@@ -75,6 +84,69 @@ function Navbar() {
             >
               Register
             </Link>
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
+  if (isRestaurantOwner) {
+    return (
+      <nav className="sticky top-0 z-50 bg-white shadow-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
+          <Link
+            to="/restaurant/dashboard"
+            className="text-3xl font-extrabold text-orange-500"
+          >
+            Foodie
+          </Link>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Link
+              to="/restaurant/dashboard"
+              className="flex items-center gap-2 rounded-xl bg-orange-50 px-3 py-2 text-sm font-bold text-orange-600 sm:px-4"
+            >
+              <FaStore /> <span className="hidden sm:inline">Restaurant Dashboard</span>
+            </Link>
+            <span className="hidden text-sm font-semibold text-gray-700 md:inline">
+              {user.name}
+            </span>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50"
+            >
+              <FaSignOutAlt /> <span className="hidden sm:inline">Logout</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
+  if (isAdmin) {
+    return (
+      <nav className="sticky top-0 z-50 bg-white shadow-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
+          <Link to="/admin" className="text-3xl font-extrabold text-orange-500">
+            Foodie
+          </Link>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Link
+              to="/admin"
+              className="flex items-center gap-2 rounded-xl bg-orange-50 px-3 py-2 text-sm font-bold text-orange-600 sm:px-4"
+            >
+              <FaUserShield /> <span className="hidden sm:inline">Admin Dashboard</span>
+            </Link>
+            <span className="hidden text-sm font-semibold text-gray-700 md:inline">
+              {user.name}
+            </span>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50"
+            >
+              <FaSignOutAlt /> <span className="hidden sm:inline">Logout</span>
+            </button>
           </div>
         </div>
       </nav>
@@ -164,6 +236,13 @@ function Navbar() {
 
             {isUserMenuOpen && (
               <div className="absolute right-0 mt-2 w-48 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl">
+                <Link
+                  to="/dashboard"
+                  onClick={closeMenus}
+                  className="flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-500"
+                >
+                  <FaTachometerAlt className="text-gray-400" /> Dashboard
+                </Link>
                 <Link
                   to="/profile"
                   onClick={closeMenus}
@@ -255,6 +334,15 @@ function Navbar() {
               <span className="rounded-full bg-orange-500 px-2 py-0.5 text-xs text-white">
                 {cartCount}
               </span>
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/dashboard"
+              onClick={closeMenus}
+              className="flex items-center gap-2 border-b px-6 py-4 font-medium text-gray-700 hover:bg-orange-50"
+            >
+              <FaTachometerAlt /> Dashboard
             </Link>
           </li>
           <li>

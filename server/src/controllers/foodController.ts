@@ -6,6 +6,11 @@ import { AuthRequest } from "../middleware/authMiddleware";
 import { ApiResponse } from "../utils/apiResponse";
 import Food from "../models/food";
 import { uploadToCloudinary, deleteFromCloudinary } from "../utils/uploadToCloudinary";
+import Restaurant from "../models/restaurant";
+import {
+  assertCanManageFood,
+  assertCanManageRestaurant,
+} from "../utils/restaurantOwnership";
 
 import {
   createFoodService,
@@ -31,6 +36,8 @@ interface FoodUpdateData {
 // Create food
 export const createFood = asyncHandler(
   async (req: AuthRequest, res: Response) => {
+    await assertCanManageRestaurant(req.user!.id, req.body.restaurant);
+
     let imageUrl = "";
     let imagePublicId = "";
 
@@ -83,6 +90,20 @@ export const getFoods = asyncHandler(
         "Foods fetched successfully",
         foods
       )
+    );
+  }
+);
+
+export const getMyFoods = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const restaurantIds = await Restaurant.find({ owner: req.user!.id })
+      .distinct("_id");
+    const foods = await Food.find({ restaurant: { $in: restaurantIds } })
+      .populate("restaurant")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(
+      new ApiResponse(true, "Restaurant foods fetched successfully", foods)
     );
   }
 );
@@ -142,13 +163,16 @@ export const getFood = asyncHandler(
 export const updateFood = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params as { id: string };
-    const existing = await Food.findById(id);
+    const existing = await assertCanManageFood(req.user!.id, id);
 
     const updateData: FoodUpdateData = {};
     const stringFields = ["name", "description", "category", "restaurant"] as const;
     stringFields.forEach((field) => {
       if (typeof req.body[field] === "string") updateData[field] = req.body[field].trim();
     });
+    if (updateData.restaurant) {
+      await assertCanManageRestaurant(req.user!.id, updateData.restaurant);
+    }
     if (req.body.price !== undefined) updateData.price = Number(req.body.price);
     if (req.body.isAvailable !== undefined) {
       updateData.isAvailable =
@@ -192,7 +216,7 @@ export const updateFood = asyncHandler(
 export const updateFoodImage = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params as { id: string };
-    const existing = await Food.findById(id);
+    const existing = await assertCanManageFood(req.user!.id, id);
 
     let imageUrl = existing?.image || "";
     let imagePublicId = existing?.imagePublicId || "";
@@ -242,6 +266,7 @@ export const deleteFood = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params as { id: string };
 
+    await assertCanManageFood(req.user!.id, id);
     await deleteFoodService(id);
 
     res.status(200).json(

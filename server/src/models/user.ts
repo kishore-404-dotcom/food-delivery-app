@@ -5,7 +5,8 @@ export interface IUser extends Document {
   email: string;
   password: string;
   phone: string;
-  role: "customer" | "admin";
+  role: "customer" | "restaurant_owner" | "admin";
+  restaurantStatus?: "pending" | "approved" | "rejected";
 }
 
 const userSchema = new Schema<IUser>(
@@ -35,8 +36,16 @@ const userSchema = new Schema<IUser>(
 
     role: {
       type: String,
-      enum: ["customer", "admin"],
+      enum: ["customer", "restaurant_owner", "admin"],
       default: "customer",
+    },
+
+    restaurantStatus: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      required: function () {
+        return this.role === "restaurant_owner";
+      },
     },
   },
   {

@@ -4,12 +4,14 @@ import {
   placeOrder,
   getMyOrders,
   getAllOrders,
+  getRestaurantOrders,
   updateOrderStatus,
 } from "../controllers/orderController";
 
 import {
   protect,
   adminOnly,
+  restaurantOwnerOrAdmin,
 } from "../middleware/authMiddleware";
 
 import validateRequest from "../middleware/validateRequest";
@@ -37,6 +39,13 @@ router.get(
   getMyOrders
 );
 
+router.get(
+  "/restaurant-orders",
+  protect,
+  restaurantOwnerOrAdmin,
+  getRestaurantOrders
+);
+
 // Get all orders (admin)
 router.get(
   "/",
@@ -49,7 +58,7 @@ router.get(
 router.put(
   "/:id",
   protect,
-  adminOnly,
+  restaurantOwnerOrAdmin,
   orderStatusValidator,
   validateRequest,
   updateOrderStatus

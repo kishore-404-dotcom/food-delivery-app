@@ -78,8 +78,15 @@ function Login() {
         response.data.message || "Login successful!"
       );
 
-      const fromPath = (location.state as { from?: { pathname?: string } })?.from?.pathname || "/";
-      navigate(fromPath, { replace: true });
+      const requestedPath = (location.state as { from?: { pathname?: string } })
+        ?.from?.pathname;
+      const roleDestination =
+        user.role === "admin"
+          ? "/admin"
+          : user.role === "restaurant_owner"
+            ? "/restaurant/dashboard"
+            : "/dashboard";
+      navigate(requestedPath || roleDestination, { replace: true });
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         const backendData = error.response?.data as

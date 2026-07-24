@@ -3,7 +3,8 @@ export interface IUser {
   name: string;
   email: string;
   phone: string;
-  role: "customer" | "admin";
+  role: "customer" | "restaurant_owner" | "admin";
+  restaurantStatus?: "pending" | "approved" | "rejected";
   createdAt?: string;
   updatedAt?: string;
 }
@@ -94,6 +95,7 @@ export interface IOrderItem {
 export interface IOrder {
   _id: string;
   user: string | IUser;
+  restaurant?: string | IRestaurant;
   deliveryAddress: string | IAddress;
   items: IOrderItem[];
   totalAmount: number;

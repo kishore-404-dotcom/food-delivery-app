@@ -6,6 +6,9 @@ import asyncHandler from "../middleware/asyncHandler";
 import { ApiResponse } from "../utils/apiResponse";
 import Restaurant from "../models/restaurant";
 import { uploadToCloudinary, deleteFromCloudinary } from "../utils/uploadToCloudinary";
+import User from "../models/user";
+import { ApiError } from "../utils/apiError";
+import { assertCanManageRestaurant } from "../utils/restaurantOwnership";
 
 import {
   createRestaurantService,
@@ -32,6 +35,16 @@ interface RestaurantUpdateData {
 // Create restaurant
 export const createRestaurant = asyncHandler(
   async (req: AuthRequest, res: Response) => {
+    const currentUser = await User.findById(req.user!.id).select("role");
+    if (!currentUser) {
+      throw new ApiError(404, "User not found");
+    }
+    if (
+      currentUser.role === "restaurant_owner" &&
+      (await Restaurant.exists({ owner: req.user!.id }))
+    ) {
+      throw new ApiError(409, "A restaurant owner can manage only one restaurant");
+    }
     let imageUrl = "";
     let imagePublicId = "";
 
@@ -86,6 +99,17 @@ export const getAllRestaurants = asyncHandler(
         "Restaurants fetched successfully",
         restaurants
       )
+    );
+  }
+);
+
+export const getMyRestaurant = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const restaurant = await Restaurant.findOne({ owner: req.user!.id })
+      .populate("owner", "name email");
+
+    res.status(200).json(
+      new ApiResponse(true, "Restaurant fetched successfully", restaurant)
     );
   }
 );
@@ -145,7 +169,7 @@ export const getRestaurantById = asyncHandler(
 export const updateRestaurant = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params as { id: string };
-    const existing = await Restaurant.findById(id);
+    const existing = await assertCanManageRestaurant(req.user!.id, id);
 
     const updateData: RestaurantUpdateData = {};
     const stringFields = ["name", "description", "address", "category"] as const;
@@ -199,7 +223,7 @@ export const updateRestaurant = asyncHandler(
 export const updateRestaurantImage = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params as { id: string };
-    const existing = await Restaurant.findById(id);
+    const existing = await assertCanManageRestaurant(req.user!.id, id);
 
     let imageUrl = existing?.image || "";
     let imagePublicId = existing?.imagePublicId || "";
@@ -249,6 +273,7 @@ export const deleteRestaurant = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params as { id: string };
 
+    await assertCanManageRestaurant(req.user!.id, id);
     await deleteRestaurantService(id);
 
     res.status(200).json(
