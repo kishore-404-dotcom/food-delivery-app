@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getProfile = exports.login = exports.register = void 0;
+exports.changePassword = exports.updateProfile = exports.getProfile = exports.login = exports.register = void 0;
 const asyncHandler_1 = __importDefault(require("../middleware/asyncHandler"));
 const apiResponse_1 = require("../utils/apiResponse");
 const authService_1 = require("../services/authService");
@@ -21,7 +21,21 @@ exports.login = (0, asyncHandler_1.default)(async (req, res) => {
 });
 // Get logged-in user profile
 exports.getProfile = (0, asyncHandler_1.default)(async (req, res) => {
-    // Find logged-in user
     const user = await user_1.default.findById(req.user?.id).select("-password");
     res.status(200).json(new apiResponse_1.ApiResponse(true, "Profile fetched successfully", user));
+});
+// Update logged-in user profile
+exports.updateProfile = (0, asyncHandler_1.default)(async (req, res) => {
+    const { name, phone } = req.body;
+    const updatedUser = await (0, authService_1.updateUserProfileService)(req.user.id, {
+        name,
+        phone,
+    });
+    res.status(200).json(new apiResponse_1.ApiResponse(true, "Profile updated successfully", updatedUser));
+});
+// Change password
+exports.changePassword = (0, asyncHandler_1.default)(async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    await (0, authService_1.changePasswordService)(req.user.id, currentPassword, newPassword);
+    res.status(200).json(new apiResponse_1.ApiResponse(true, "Password changed successfully"));
 });

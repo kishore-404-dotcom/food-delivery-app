@@ -4,7 +4,8 @@ import asyncHandler from "../middleware/asyncHandler";
 import { AuthRequest } from "../middleware/authMiddleware";
 
 import { ApiResponse } from "../utils/apiResponse";
-import uploadToCloudinary from "../utils/uploadToCloudinary";
+import Food from "../models/food";
+import { uploadToCloudinary, deleteFromCloudinary } from "../utils/uploadToCloudinary";
 
 import {
   createFoodService,
@@ -20,18 +21,28 @@ import {
 export const createFood = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     let imageUrl = "";
+    let imagePublicId = "";
 
     // Upload image to Cloudinary
     if (req.file) {
-      imageUrl = await uploadToCloudinary(
+      const uploadRes = await uploadToCloudinary(
         req.file.buffer,
         "foods"
       );
+      imageUrl = uploadRes.secure_url;
+      imagePublicId = uploadRes.public_id;
+    } else if (req.body.image) {
+      imageUrl = req.body.image;
     }
 
     const food = await createFoodService({
-      ...req.body,
+      name: req.body.name,
+      description: req.body.description || req.body.name,
+      price: Number(req.body.price),
+      category: req.body.category || "Main Course",
+      restaurant: req.body.restaurant,
       image: imageUrl,
+      imagePublicId,
     });
 
     res.status(201).json(
@@ -62,12 +73,9 @@ export const getFoods = asyncHandler(
 // Search foods
 export const searchFoods = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-    const { name = "" } = req.query as {
-      name?: string;
-    };
+    const { name = "" } = req.query as { name?: string };
 
-    const foods =
-      await searchFoodsService(name);
+    const foods = await searchFoodsService(name);
 
     res.status(200).json(
       new ApiResponse(
@@ -82,14 +90,9 @@ export const searchFoods = asyncHandler(
 // Get foods by category
 export const getFoodsByCategory = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-    const { category } = req.params as {
-      category: string;
-    };
+    const { category } = req.params as { category: string };
 
-    const foods =
-      await getFoodsByCategoryService(
-        category
-      );
+    const foods = await getFoodsByCategoryService(category);
 
     res.status(200).json(
       new ApiResponse(
@@ -104,12 +107,9 @@ export const getFoodsByCategory = asyncHandler(
 // Get food by ID
 export const getFood = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-    const { id } = req.params as {
-      id: string;
-    };
+    const { id } = req.params as { id: string };
 
-    const food =
-      await getFoodByIdService(id);
+    const food = await getFoodByIdService(id);
 
     res.status(200).json(
       new ApiResponse(
@@ -124,15 +124,24 @@ export const getFood = asyncHandler(
 // Update food
 export const updateFood = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-    const { id } = req.params as {
-      id: string;
-    };
+    const { id } = req.params as { id: string };
+    const existing = await Food.findById(id);
 
-    const food =
-      await updateFoodService(
-        id,
-        req.body
+    const updateData: any = { ...req.body };
+
+    if (req.file) {
+      if (existing?.imagePublicId) {
+        await deleteFromCloudinary(existing.imagePublicId);
+      }
+      const uploadRes = await uploadToCloudinary(
+        req.file.buffer,
+        "foods"
       );
+      updateData.image = uploadRes.secure_url;
+      updateData.imagePublicId = uploadRes.public_id;
+    }
+
+    const food = await updateFoodService(id, updateData);
 
     res.status(200).json(
       new ApiResponse(
@@ -147,23 +156,28 @@ export const updateFood = asyncHandler(
 // Update food image
 export const updateFoodImage = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-    const { id } = req.params as {
-      id: string;
-    };
+    const { id } = req.params as { id: string };
+    const existing = await Food.findById(id);
 
-    let imageUrl = "";
+    let imageUrl = existing?.image || "";
+    let imagePublicId = existing?.imagePublicId || "";
 
     if (req.file) {
-      imageUrl = await uploadToCloudinary(
+      if (existing?.imagePublicId) {
+        await deleteFromCloudinary(existing.imagePublicId);
+      }
+      const uploadRes = await uploadToCloudinary(
         req.file.buffer,
         "foods"
       );
+      imageUrl = uploadRes.secure_url;
+      imagePublicId = uploadRes.public_id;
     }
 
-    const food =
-      await updateFoodService(id, {
-        image: imageUrl,
-      });
+    const food = await updateFoodService(id, {
+      image: imageUrl,
+      imagePublicId,
+    });
 
     res.status(200).json(
       new ApiResponse(
@@ -178,9 +192,7 @@ export const updateFoodImage = asyncHandler(
 // Delete food
 export const deleteFood = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-    const { id } = req.params as {
-      id: string;
-    };
+    const { id } = req.params as { id: string };
 
     await deleteFoodService(id);
 

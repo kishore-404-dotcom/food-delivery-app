@@ -5,6 +5,7 @@ export interface IFood extends Document {
   description: string;
   price: number;
   image: string;
+  imagePublicId?: string;
   category: string;
   isAvailable: boolean;
   restaurant: mongoose.Types.ObjectId;
@@ -32,6 +33,11 @@ const foodSchema = new Schema<IFood>(
     },
 
     image: {
+      type: String,
+      default: "",
+    },
+
+    imagePublicId: {
       type: String,
       default: "",
     },

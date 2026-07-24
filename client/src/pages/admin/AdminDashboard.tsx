@@ -12,6 +12,7 @@ import {
   FaTrash,
   FaEdit,
   FaBoxOpen,
+  FaImage,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 
@@ -25,14 +26,12 @@ import {
   createRestaurant,
   updateRestaurant,
   deleteRestaurant,
-  type CreateRestaurantInput,
 } from "../../services/restaurantService";
 import {
   getFoods,
   createFood,
   updateFood,
   deleteFood,
-  type CreateFoodInput,
 } from "../../services/foodService";
 import { getDashboardOverview, type DashboardOverview } from "../../services/adminService";
 
@@ -51,6 +50,7 @@ export function AdminDashboard() {
   const [reviews, setReviews] = useState<IReview[]>([]);
 
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
 
   // Restaurant Modal & Form State
   const [isRestModalOpen, setIsRestModalOpen] = useState(false);
@@ -58,7 +58,8 @@ export function AdminDashboard() {
   const [restName, setRestName] = useState("");
   const [restCategory, setRestCategory] = useState("Italian");
   const [restAddress, setRestAddress] = useState("");
-  const [restImage, setRestImage] = useState("");
+  const [restImageFile, setRestImageFile] = useState<File | null>(null);
+  const [restImagePreview, setRestImagePreview] = useState<string>("");
 
   // Food Modal & Form State
   const [isFoodModalOpen, setIsFoodModalOpen] = useState(false);
@@ -68,7 +69,8 @@ export function AdminDashboard() {
   const [foodPrice, setFoodPrice] = useState<number>(199);
   const [foodCategory, setFoodCategory] = useState("Main Course");
   const [foodRestId, setFoodRestId] = useState("");
-  const [foodImage, setFoodImage] = useState("");
+  const [foodImageFile, setFoodImageFile] = useState<File | null>(null);
+  const [foodImagePreview, setFoodImagePreview] = useState<string>("");
 
   // Coupon Form State
   const [newCouponCode, setNewCouponCode] = useState("");
@@ -119,6 +121,20 @@ export function AdminDashboard() {
     fetchAdminData();
   }, [fetchAdminData]);
 
+  // File Validation Helper
+  const validateImageFile = (file: File): boolean => {
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+    if (!allowedTypes.includes(file.type.toLowerCase())) {
+      toast.error("Invalid file format. Only JPG, PNG, and WEBP are supported.");
+      return false;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size exceeds 5MB limit. Please choose a smaller image.");
+      return false;
+    }
+    return true;
+  };
+
   // RESTAURANT CRUD
   const handleSaveRestaurant = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,36 +144,41 @@ export function AdminDashboard() {
     }
 
     try {
-      const payload: CreateRestaurantInput = {
-        name: restName.trim(),
-        category: restCategory,
-        address: restAddress.trim(),
-        image: restImage.trim() || undefined,
-      };
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("name", restName.trim());
+      formData.append("address", restAddress.trim());
+      formData.append("category", restCategory);
+
+      if (restImageFile) {
+        formData.append("image", restImageFile);
+      }
 
       if (editingRest) {
-        await updateRestaurant(editingRest._id, payload);
+        await updateRestaurant(editingRest._id, formData);
         toast.success("Restaurant updated!");
       } else {
-        await createRestaurant(payload);
+        await createRestaurant(formData);
         toast.success("Restaurant created!");
       }
 
       setIsRestModalOpen(false);
       setEditingRest(null);
       setRestName("");
-      setRestCategory("Italian");
       setRestAddress("");
-      setRestImage("");
+      setRestImageFile(null);
+      setRestImagePreview("");
       fetchAdminData();
     } catch (err: unknown) {
       console.error("Error saving restaurant:", err);
-      toast.error("Failed to save restaurant");
+      toast.error("Failed to save restaurant to Cloudinary/MongoDB");
+    } finally {
+      setUploading(false);
     }
   };
 
   const handleDeleteRestaurant = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this restaurant?")) return;
+    if (!window.confirm("Are you sure you want to delete this restaurant? This will remove associated Cloudinary media.")) return;
     try {
       await deleteRestaurant(id);
       toast.success("Restaurant deleted!");
@@ -177,21 +198,23 @@ export function AdminDashboard() {
     }
 
     try {
-      const payload: CreateFoodInput = {
-        name: foodName.trim(),
-        description: foodDesc.trim(),
-        price: Number(foodPrice),
-        category: foodCategory,
-        restaurant: foodRestId,
-        image: foodImage.trim() || undefined,
-        isAvailable: true,
-      };
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("name", foodName.trim());
+      formData.append("description", foodDesc.trim());
+      formData.append("price", String(foodPrice));
+      formData.append("category", foodCategory);
+      formData.append("restaurant", foodRestId);
+
+      if (foodImageFile) {
+        formData.append("image", foodImageFile);
+      }
 
       if (editingFood) {
-        await updateFood(editingFood._id, payload);
+        await updateFood(editingFood._id, formData);
         toast.success("Food dish updated!");
       } else {
-        await createFood(payload);
+        await createFood(formData);
         toast.success("Food dish created!");
       }
 
@@ -200,11 +223,14 @@ export function AdminDashboard() {
       setFoodName("");
       setFoodDesc("");
       setFoodPrice(199);
-      setFoodImage("");
+      setFoodImageFile(null);
+      setFoodImagePreview("");
       fetchAdminData();
     } catch (err: unknown) {
       console.error("Error saving food:", err);
-      toast.error("Failed to save food dish");
+      toast.error("Failed to save food dish to Cloudinary/MongoDB");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -220,7 +246,7 @@ export function AdminDashboard() {
   };
 
   const handleDeleteFood = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this food dish?")) return;
+    if (!window.confirm("Are you sure you want to delete this food dish? Cloudinary image will be removed.")) return;
     try {
       await deleteFood(id);
       toast.success("Food dish deleted!");
@@ -305,7 +331,7 @@ export function AdminDashboard() {
               <h1 className="text-3xl font-black">Admin Control Panel</h1>
             </div>
             <p className="mt-1 text-sm text-gray-400">
-              Manage platform restaurants, foods, live order statuses, coupons, and analytics.
+              Manage platform restaurants, Cloudinary media, live orders, coupons, and analytics.
             </p>
           </div>
 
@@ -387,7 +413,8 @@ export function AdminDashboard() {
                   setRestName("");
                   setRestCategory("Italian");
                   setRestAddress("");
-                  setRestImage("");
+                  setRestImageFile(null);
+                  setRestImagePreview("");
                   setIsRestModalOpen(true);
                 }}
                 className="flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-xs font-bold text-white shadow hover:bg-orange-600"
@@ -398,22 +425,31 @@ export function AdminDashboard() {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {restaurants.map((r) => (
-                <div key={r._id} className="rounded-2xl border p-4 bg-gray-50 flex items-center justify-between">
-                  <div>
-                    <h4 className="font-bold text-gray-900 text-sm">{r.name}</h4>
-                    <p className="text-xs text-gray-500">{r.address}</p>
-                    <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full mt-1 inline-block">
-                      {r.category}
-                    </span>
+                <div key={r._id} className="rounded-2xl border p-4 bg-gray-50 flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={r.image || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80"}
+                      alt={r.name}
+                      className="h-14 w-14 rounded-xl object-cover border"
+                      loading="lazy"
+                    />
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-sm">{r.name}</h4>
+                      <p className="text-xs text-gray-500 line-clamp-1">{r.address}</p>
+                      <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full mt-1 inline-block">
+                        {r.category}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-1">
                     <button
                       onClick={() => {
                         setEditingRest(r);
                         setRestName(r.name);
                         setRestCategory(r.category || "Italian");
                         setRestAddress(r.address);
-                        setRestImage(r.image || "");
+                        setRestImagePreview(r.image || "");
+                        setRestImageFile(null);
                         setIsRestModalOpen(true);
                       }}
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
@@ -446,7 +482,8 @@ export function AdminDashboard() {
                   setFoodPrice(199);
                   setFoodCategory("Main Course");
                   setFoodRestId(restaurants[0]?._id || "");
-                  setFoodImage("");
+                  setFoodImageFile(null);
+                  setFoodImagePreview("");
                   setIsFoodModalOpen(true);
                 }}
                 className="flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-xs font-bold text-white shadow hover:bg-orange-600"
@@ -457,20 +494,28 @@ export function AdminDashboard() {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {foods.map((f) => (
-                <div key={f._id} className="rounded-2xl border p-4 bg-gray-50 flex items-center justify-between text-xs">
-                  <div>
-                    <h4 className="font-bold text-gray-900 text-sm">{f.name}</h4>
-                    <p className="text-orange-500 font-bold">₹{f.price}</p>
-                    <button
-                      onClick={() => handleToggleFoodAvailability(f)}
-                      className={`mt-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                        f.isAvailable ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {f.isAvailable ? "Available" : "Sold Out"}
-                    </button>
+                <div key={f._id} className="rounded-2xl border p-4 bg-gray-50 flex items-start justify-between text-xs gap-3">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={f.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=200&q=80"}
+                      alt={f.name}
+                      className="h-14 w-14 rounded-xl object-cover border"
+                      loading="lazy"
+                    />
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-sm">{f.name}</h4>
+                      <p className="text-orange-500 font-bold">₹{f.price}</p>
+                      <button
+                        onClick={() => handleToggleFoodAvailability(f)}
+                        className={`mt-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          f.isAvailable ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {f.isAvailable ? "Available" : "Sold Out"}
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-1">
                     <button
                       onClick={() => {
                         setEditingFood(f);
@@ -483,7 +528,8 @@ export function AdminDashboard() {
                             ? (f.restaurant as IRestaurant)._id
                             : String(f.restaurant)
                         );
-                        setFoodImage(f.image || "");
+                        setFoodImagePreview(f.image || "");
+                        setFoodImageFile(null);
                         setIsFoodModalOpen(true);
                       }}
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
@@ -632,10 +678,38 @@ export function AdminDashboard() {
             <input type="text" placeholder="Name *" value={restName} onChange={(e) => setRestName(e.target.value)} className="w-full rounded-xl border p-2 font-bold" />
             <input type="text" placeholder="Address *" value={restAddress} onChange={(e) => setRestAddress(e.target.value)} className="w-full rounded-xl border p-2" />
             <input type="text" placeholder="Category (e.g. Italian)" value={restCategory} onChange={(e) => setRestCategory(e.target.value)} className="w-full rounded-xl border p-2" />
-            <input type="text" placeholder="Image URL (optional)" value={restImage} onChange={(e) => setRestImage(e.target.value)} className="w-full rounded-xl border p-2" />
+            
+            {/* Cloudinary Image File Input */}
+            <div>
+              <label className="block font-bold text-gray-700 mb-1 flex items-center gap-1">
+                <FaImage className="text-orange-500" /> Restaurant Image (Cloudinary)
+              </label>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file && validateImageFile(file)) {
+                    setRestImageFile(file);
+                    setRestImagePreview(URL.createObjectURL(file));
+                  }
+                }}
+                className="w-full rounded-xl border p-2"
+              />
+              <p className="text-[10px] text-gray-400 mt-1">Accepted: JPG, PNG, WEBP (Max 5MB)</p>
+
+              {restImagePreview && (
+                <div className="mt-2 text-center">
+                  <img src={restImagePreview} alt="Preview" className="h-24 w-full object-cover rounded-xl border" />
+                </div>
+              )}
+            </div>
+
             <div className="flex justify-end gap-2 pt-2">
               <button type="button" onClick={() => setIsRestModalOpen(false)} className="px-4 py-2 border rounded-xl font-bold">Cancel</button>
-              <button type="submit" className="px-5 py-2 bg-orange-500 text-white font-bold rounded-xl">Save</button>
+              <button type="submit" disabled={uploading} className="px-5 py-2 bg-orange-500 text-white font-bold rounded-xl">
+                {uploading ? "Uploading to Cloudinary..." : "Save Restaurant"}
+              </button>
             </div>
           </form>
         </div>
@@ -653,10 +727,38 @@ export function AdminDashboard() {
             <input type="text" placeholder="Dish Name *" value={foodName} onChange={(e) => setFoodName(e.target.value)} className="w-full rounded-xl border p-2 font-bold" />
             <textarea placeholder="Description" value={foodDesc} onChange={(e) => setFoodDesc(e.target.value)} className="w-full rounded-xl border p-2" />
             <input type="number" placeholder="Price (₹)" value={foodPrice} onChange={(e) => setFoodPrice(Number(e.target.value))} className="w-full rounded-xl border p-2 font-bold" />
-            <input type="text" placeholder="Image URL (optional)" value={foodImage} onChange={(e) => setFoodImage(e.target.value)} className="w-full rounded-xl border p-2" />
+            
+            {/* Cloudinary Image File Input */}
+            <div>
+              <label className="block font-bold text-gray-700 mb-1 flex items-center gap-1">
+                <FaImage className="text-orange-500" /> Food Image (Cloudinary)
+              </label>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file && validateImageFile(file)) {
+                    setFoodImageFile(file);
+                    setFoodImagePreview(URL.createObjectURL(file));
+                  }
+                }}
+                className="w-full rounded-xl border p-2"
+              />
+              <p className="text-[10px] text-gray-400 mt-1">Accepted: JPG, PNG, WEBP (Max 5MB)</p>
+
+              {foodImagePreview && (
+                <div className="mt-2 text-center">
+                  <img src={foodImagePreview} alt="Preview" className="h-24 w-full object-cover rounded-xl border" />
+                </div>
+              )}
+            </div>
+
             <div className="flex justify-end gap-2 pt-2">
               <button type="button" onClick={() => setIsFoodModalOpen(false)} className="px-4 py-2 border rounded-xl font-bold">Cancel</button>
-              <button type="submit" className="px-5 py-2 bg-orange-500 text-white font-bold rounded-xl">Save</button>
+              <button type="submit" disabled={uploading} className="px-5 py-2 bg-orange-500 text-white font-bold rounded-xl">
+                {uploading ? "Uploading to Cloudinary..." : "Save Food Dish"}
+              </button>
             </div>
           </form>
         </div>

@@ -1,56 +1,40 @@
 import Food from "../models/food";
 import { ApiError } from "../utils/apiError";
-
-import {
-  getCache,
-  setCache,
-} from "./cacheService";
+import { deleteFromCloudinary } from "../utils/uploadToCloudinary";
+import { getCache, setCache } from "./cacheService";
 
 // Create food
-export const createFoodService = async (
-  foodData: {
-    name: string;
-    description: string;
-    price: number;
-    image: string;
-    category: string;
-    restaurant: string;
-  }
-) => {
+export const createFoodService = async (foodData: {
+  name: string;
+  description: string;
+  price: number;
+  image?: string;
+  imagePublicId?: string;
+  category: string;
+  restaurant: string;
+}) => {
   return await Food.create(foodData);
 };
 
 // Get all foods
-export const getFoodsService =
-  async () => {
+export const getFoodsService = async () => {
+  const cachedFoods = await getCache("foods");
 
-    const cachedFoods =
-      await getCache("foods");
+  if (cachedFoods) {
+    return JSON.parse(cachedFoods);
+  }
 
-    if (cachedFoods) {
-      return JSON.parse(
-        cachedFoods
-      );
-    }
+  const foods = await Food.find()
+    .populate("restaurant")
+    .sort({ createdAt: -1 });
 
-    const foods =
-      await Food.find()
-        .populate("restaurant")
-        .sort({ createdAt: -1 });
+  await setCache("foods", foods);
 
-    await setCache(
-      "foods",
-      foods
-    );
-
-    return foods;
-
+  return foods;
 };
 
 // Search foods
-export const searchFoodsService = async (
-  name: string
-) => {
+export const searchFoodsService = async (name: string) => {
   return await Food.find({
     name: {
       $regex: name,
@@ -62,71 +46,52 @@ export const searchFoodsService = async (
 };
 
 // Get foods by category
-export const getFoodsByCategoryService =
-  async (category: string) => {
-    return await Food.find({
-      category: {
-        $regex: category,
-        $options: "i",
-      },
-    })
-      .populate("restaurant")
-      .sort({ createdAt: -1 });
-  };
+export const getFoodsByCategoryService = async (category: string) => {
+  return await Food.find({
+    category: {
+      $regex: category,
+      $options: "i",
+    },
+  })
+    .populate("restaurant")
+    .sort({ createdAt: -1 });
+};
 
 // Get food by ID
-export const getFoodByIdService = async (
-  id: string
-) => {
-  const food = await Food.findById(id)
-    .populate("restaurant");
+export const getFoodByIdService = async (id: string) => {
+  const food = await Food.findById(id).populate("restaurant");
 
   if (!food) {
-    throw new ApiError(
-      404,
-      "Food not found"
-    );
+    throw new ApiError(404, "Food not found");
   }
 
   return food;
 };
 
 // Update food
-export const updateFoodService = async (
-  id: string,
-  data: object
-) => {
-  const food = await Food.findByIdAndUpdate(
-    id,
-    data,
-    {
-      new: true,
-      runValidators: true,
-    }
-  );
+export const updateFoodService = async (id: string, data: object) => {
+  const food = await Food.findByIdAndUpdate(id, data, {
+    new: true,
+    runValidators: true,
+  });
 
   if (!food) {
-    throw new ApiError(
-      404,
-      "Food not found"
-    );
+    throw new ApiError(404, "Food not found");
   }
 
   return food;
 };
 
 // Delete food
-export const deleteFoodService = async (
-  id: string
-) => {
-  const food =
-    await Food.findById(id);
+export const deleteFoodService = async (id: string) => {
+  const food = await Food.findById(id);
 
   if (!food) {
-    throw new ApiError(
-      404,
-      "Food not found"
-    );
+    throw new ApiError(404, "Food not found");
+  }
+
+  if (food.imagePublicId) {
+    await deleteFromCloudinary(food.imagePublicId);
   }
 
   await food.deleteOne();

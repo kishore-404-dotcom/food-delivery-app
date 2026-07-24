@@ -52,6 +52,10 @@ const foodSchema = new mongoose_1.Schema({
         type: String,
         default: "",
     },
+    imagePublicId: {
+        type: String,
+        default: "",
+    },
     category: {
         type: String,
         required: true,

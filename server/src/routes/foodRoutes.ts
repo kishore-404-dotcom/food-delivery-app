@@ -2,7 +2,6 @@ import express from "express";
 
 import upload from "../middleware/uploadMiddleware";
 import validateRequest from "../middleware/validateRequest";
-
 import { foodValidator } from "../validators/foodValidator";
 
 import {
@@ -16,10 +15,7 @@ import {
   deleteFood,
 } from "../controllers/foodController";
 
-import {
-  protect,
-  adminOnly,
-} from "../middleware/authMiddleware";
+import { protect, adminOnly } from "../middleware/authMiddleware";
 
 const router = express.Router();
 
@@ -38,27 +34,16 @@ router.post(
 router.get("/", getFoods);
 
 // Search foods
-router.get(
-  "/search",
-  searchFoods
-);
+router.get("/search", searchFoods);
 
 // Get foods by category
-router.get(
-  "/category/:category",
-  getFoodsByCategory
-);
+router.get("/category/:category", getFoodsByCategory);
 
 // Get food by ID
 router.get("/:id", getFood);
 
-// Update food
-router.put(
-  "/:id",
-  protect,
-  adminOnly,
-  updateFood
-);
+// Update food (supports multipart/form-data optional image upload)
+router.put("/:id", protect, adminOnly, upload.single("image"), updateFood);
 
 // Update food image
 router.put(
@@ -70,11 +55,6 @@ router.put(
 );
 
 // Delete food
-router.delete(
-  "/:id",
-  protect,
-  adminOnly,
-  deleteFood
-);
+router.delete("/:id", protect, adminOnly, deleteFood);
 
 export default router;

@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getRestaurantsByCategoryService = exports.searchRestaurantsService = exports.deleteRestaurantService = exports.updateRestaurantService = exports.getRestaurantByIdService = exports.getAllRestaurantsService = exports.createRestaurantService = void 0;
 const restaurant_1 = __importDefault(require("../models/restaurant"));
 const apiError_1 = require("../utils/apiError");
+const uploadToCloudinary_1 = require("../utils/uploadToCloudinary");
 const cacheService_1 = require("./cacheService");
 // Create restaurant
 const createRestaurantService = async (restaurantData) => {
@@ -29,8 +30,7 @@ const getAllRestaurantsService = async () => {
 exports.getAllRestaurantsService = getAllRestaurantsService;
 // Get restaurant by ID
 const getRestaurantByIdService = async (id) => {
-    const restaurant = await restaurant_1.default.findById(id)
-        .populate("owner", "name email");
+    const restaurant = await restaurant_1.default.findById(id).populate("owner", "name email");
     if (!restaurant) {
         throw new apiError_1.ApiError(404, "Restaurant not found");
     }
@@ -54,6 +54,9 @@ const deleteRestaurantService = async (id) => {
     const restaurant = await restaurant_1.default.findById(id);
     if (!restaurant) {
         throw new apiError_1.ApiError(404, "Restaurant not found");
+    }
+    if (restaurant.imagePublicId) {
+        await (0, uploadToCloudinary_1.deleteFromCloudinary)(restaurant.imagePublicId);
     }
     await restaurant.deleteOne();
 };

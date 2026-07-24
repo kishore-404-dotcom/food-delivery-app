@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loginUser = exports.registerUser = void 0;
+exports.changePasswordService = exports.updateUserProfileService = exports.loginUser = exports.registerUser = void 0;
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const user_1 = __importDefault(require("../models/user"));
@@ -55,3 +55,36 @@ const loginUser = async (email, password) => {
     };
 };
 exports.loginUser = loginUser;
+// Update Profile (Allowed fields: name, phone)
+const updateUserProfileService = async (userId, data) => {
+    const user = await user_1.default.findById(userId);
+    if (!user) {
+        throw new apiError_1.ApiError(404, "User not found");
+    }
+    if (data.name)
+        user.name = data.name.trim();
+    if (data.phone)
+        user.phone = data.phone.trim();
+    await user.save();
+    const { password: _, ...userResponse } = user.toObject();
+    return userResponse;
+};
+exports.updateUserProfileService = updateUserProfileService;
+// Change Password
+const changePasswordService = async (userId, currentPassword, newPassword) => {
+    const user = await user_1.default.findById(userId);
+    if (!user) {
+        throw new apiError_1.ApiError(404, "User not found");
+    }
+    const isMatch = await bcrypt_1.default.compare(currentPassword, user.password);
+    if (!isMatch) {
+        throw new apiError_1.ApiError(400, "Incorrect current password");
+    }
+    if (newPassword.length < 6) {
+        throw new apiError_1.ApiError(400, "New password must be at least 6 characters long");
+    }
+    user.password = await bcrypt_1.default.hash(newPassword, 10);
+    await user.save();
+    return { message: "Password updated successfully" };
+};
+exports.changePasswordService = changePasswordService;

@@ -5,6 +5,7 @@ export interface IRestaurant extends Document {
   description: string;
   address: string;
   image: string;
+  imagePublicId?: string;
   category: string;
   rating: number;
   deliveryTime: number;
@@ -36,6 +37,11 @@ const restaurantSchema = new Schema<IRestaurant>(
       default: "",
     },
 
+    imagePublicId: {
+      type: String,
+      default: "",
+    },
+
     category: {
       type: String,
       required: true,
@@ -49,6 +55,7 @@ const restaurantSchema = new Schema<IRestaurant>(
     deliveryTime: {
       type: Number,
       required: true,
+      default: 30,
     },
 
     deliveryFee: {

@@ -4,7 +4,8 @@ import { AuthRequest } from "../middleware/authMiddleware";
 import asyncHandler from "../middleware/asyncHandler";
 
 import { ApiResponse } from "../utils/apiResponse";
-import uploadToCloudinary from "../utils/uploadToCloudinary";
+import Restaurant from "../models/restaurant";
+import { uploadToCloudinary, deleteFromCloudinary } from "../utils/uploadToCloudinary";
 
 import {
   createRestaurantService,
@@ -20,18 +21,29 @@ import {
 export const createRestaurant = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     let imageUrl = "";
+    let imagePublicId = "";
 
     // Upload image to Cloudinary
     if (req.file) {
-      imageUrl = await uploadToCloudinary(
+      const uploadRes = await uploadToCloudinary(
         req.file.buffer,
         "restaurants"
       );
+      imageUrl = uploadRes.secure_url;
+      imagePublicId = uploadRes.public_id;
+    } else if (req.body.image) {
+      imageUrl = req.body.image;
     }
 
     const restaurant = await createRestaurantService({
-      ...req.body,
+      name: req.body.name,
+      description: req.body.description || req.body.name,
+      address: req.body.address,
+      category: req.body.category || "General",
+      deliveryTime: req.body.deliveryTime ? Number(req.body.deliveryTime) : 30,
+      deliveryFee: req.body.deliveryFee ? Number(req.body.deliveryFee) : 0,
       image: imageUrl,
+      imagePublicId,
       owner: req.user!.id,
     });
 
@@ -48,8 +60,7 @@ export const createRestaurant = asyncHandler(
 // Get all restaurants
 export const getAllRestaurants = asyncHandler(
   async (_req: AuthRequest, res: Response) => {
-    const restaurants =
-      await getAllRestaurantsService();
+    const restaurants = await getAllRestaurantsService();
 
     res.status(200).json(
       new ApiResponse(
@@ -64,12 +75,9 @@ export const getAllRestaurants = asyncHandler(
 // Search restaurants by name
 export const searchRestaurants = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-    const { name = "" } = req.query as {
-      name?: string;
-    };
+    const { name = "" } = req.query as { name?: string };
 
-    const restaurants =
-      await searchRestaurantsService(name);
+    const restaurants = await searchRestaurantsService(name);
 
     res.status(200).json(
       new ApiResponse(
@@ -84,14 +92,9 @@ export const searchRestaurants = asyncHandler(
 // Get restaurants by category
 export const getRestaurantsByCategory = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-    const { category } = req.params as {
-      category: string;
-    };
+    const { category } = req.params as { category: string };
 
-    const restaurants =
-      await getRestaurantsByCategoryService(
-        category
-      );
+    const restaurants = await getRestaurantsByCategoryService(category);
 
     res.status(200).json(
       new ApiResponse(
@@ -106,12 +109,9 @@ export const getRestaurantsByCategory = asyncHandler(
 // Get restaurant by ID
 export const getRestaurantById = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-    const { id } = req.params as {
-      id: string;
-    };
+    const { id } = req.params as { id: string };
 
-    const restaurant =
-      await getRestaurantByIdService(id);
+    const restaurant = await getRestaurantByIdService(id);
 
     res.status(200).json(
       new ApiResponse(
@@ -126,15 +126,25 @@ export const getRestaurantById = asyncHandler(
 // Update restaurant
 export const updateRestaurant = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-    const { id } = req.params as {
-      id: string;
-    };
+    const { id } = req.params as { id: string };
+    const existing = await Restaurant.findById(id);
 
-    const restaurant =
-      await updateRestaurantService(
-        id,
-        req.body
+    const updateData: any = { ...req.body };
+
+    // Upload new image if present
+    if (req.file) {
+      if (existing?.imagePublicId) {
+        await deleteFromCloudinary(existing.imagePublicId);
+      }
+      const uploadRes = await uploadToCloudinary(
+        req.file.buffer,
+        "restaurants"
       );
+      updateData.image = uploadRes.secure_url;
+      updateData.imagePublicId = uploadRes.public_id;
+    }
+
+    const restaurant = await updateRestaurantService(id, updateData);
 
     res.status(200).json(
       new ApiResponse(
@@ -149,23 +159,28 @@ export const updateRestaurant = asyncHandler(
 // Update restaurant image
 export const updateRestaurantImage = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-    const { id } = req.params as {
-      id: string;
-    };
+    const { id } = req.params as { id: string };
+    const existing = await Restaurant.findById(id);
 
-    let imageUrl = "";
+    let imageUrl = existing?.image || "";
+    let imagePublicId = existing?.imagePublicId || "";
 
     if (req.file) {
-      imageUrl = await uploadToCloudinary(
+      if (existing?.imagePublicId) {
+        await deleteFromCloudinary(existing.imagePublicId);
+      }
+      const uploadRes = await uploadToCloudinary(
         req.file.buffer,
         "restaurants"
       );
+      imageUrl = uploadRes.secure_url;
+      imagePublicId = uploadRes.public_id;
     }
 
-    const restaurant =
-      await updateRestaurantService(id, {
-        image: imageUrl,
-      });
+    const restaurant = await updateRestaurantService(id, {
+      image: imageUrl,
+      imagePublicId,
+    });
 
     res.status(200).json(
       new ApiResponse(
@@ -180,9 +195,7 @@ export const updateRestaurantImage = asyncHandler(
 // Delete restaurant
 export const deleteRestaurant = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-    const { id } = req.params as {
-      id: string;
-    };
+    const { id } = req.params as { id: string };
 
     await deleteRestaurantService(id);
 

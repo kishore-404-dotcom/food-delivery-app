@@ -36,14 +36,16 @@ export const getRestaurantById = async (id: string): Promise<IRestaurant> => {
   return response.data.data;
 };
 
-export const createRestaurant = async (data: CreateRestaurantInput): Promise<IRestaurant> => {
+export const createRestaurant = async (
+  data: CreateRestaurantInput | FormData
+): Promise<IRestaurant> => {
   const response = await api.post<ApiResponse<IRestaurant>>("/restaurants", data);
   return response.data.data;
 };
 
 export const updateRestaurant = async (
   id: string,
-  data: Partial<CreateRestaurantInput>
+  data: Partial<CreateRestaurantInput> | FormData
 ): Promise<IRestaurant> => {
   const response = await api.put<ApiResponse<IRestaurant>>(`/restaurants/${id}`, data);
   return response.data.data;

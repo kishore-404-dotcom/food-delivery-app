@@ -1,161 +1,102 @@
 import Restaurant from "../models/restaurant";
 import { ApiError } from "../utils/apiError";
-
-import {
-  getCache,
-  setCache,
-} from "./cacheService";
+import { deleteFromCloudinary } from "../utils/uploadToCloudinary";
+import { getCache, setCache } from "./cacheService";
 
 // Create restaurant
-export const createRestaurantService = async (
-  restaurantData: {
-    name: string;
-    description: string;
-    address: string;
-    image: string;
-    category: string;
-    deliveryTime: number;
-    deliveryFee: number;
-    owner: string;
-  }
-) => {
-
-  return await Restaurant.create(
-    restaurantData
-  );
-
+export const createRestaurantService = async (restaurantData: {
+  name: string;
+  description: string;
+  address: string;
+  image?: string;
+  imagePublicId?: string;
+  category: string;
+  deliveryTime?: number;
+  deliveryFee?: number;
+  owner: string;
+}) => {
+  return await Restaurant.create(restaurantData);
 };
-
 
 // Get all restaurants
-export const getAllRestaurantsService =
-  async () => {
+export const getAllRestaurantsService = async () => {
+  const cached = await getCache("restaurants");
 
-    const cached =
-      await getCache(
-        "restaurants"
-      );
+  if (cached) {
+    return JSON.parse(cached);
+  }
 
-    if (cached) {
-      return JSON.parse(
-        cached
-      );
-    }
+  const restaurants = await Restaurant.find()
+    .populate("owner", "name email")
+    .sort({
+      createdAt: -1,
+    });
 
-    const restaurants =
-      await Restaurant.find()
-        .populate(
-          "owner",
-          "name email"
-        )
-        .sort({
-          createdAt: -1,
-        });
+  await setCache("restaurants", restaurants);
 
-    await setCache(
-      "restaurants",
-      restaurants
-    );
-
-    return restaurants;
-
+  return restaurants;
 };
 
-
 // Get restaurant by ID
-export const getRestaurantByIdService =
-  async (id: string) => {
+export const getRestaurantByIdService = async (id: string) => {
+  const restaurant = await Restaurant.findById(id).populate("owner", "name email");
 
-    const restaurant =
-      await Restaurant.findById(id)
-        .populate("owner", "name email");
+  if (!restaurant) {
+    throw new ApiError(404, "Restaurant not found");
+  }
 
-    if (!restaurant) {
-      throw new ApiError(
-        404,
-        "Restaurant not found"
-      );
-    }
-
-    return restaurant;
-
-  };
-
+  return restaurant;
+};
 
 // Update restaurant
-export const updateRestaurantService =
-  async (
-    id: string,
-    data: object
-  ) => {
+export const updateRestaurantService = async (id: string, data: object) => {
+  const restaurant = await Restaurant.findByIdAndUpdate(id, data, {
+    new: true,
+    runValidators: true,
+  });
 
-    const restaurant =
-      await Restaurant.findByIdAndUpdate(
-        id,
-        data,
-        {
-          new: true,
-          runValidators: true,
-        }
-      );
+  if (!restaurant) {
+    throw new ApiError(404, "Restaurant not found");
+  }
 
-    if (!restaurant) {
-      throw new ApiError(
-        404,
-        "Restaurant not found"
-      );
-    }
-
-    return restaurant;
-
-  };
-
+  return restaurant;
+};
 
 // Delete restaurant
-export const deleteRestaurantService =
-  async (id: string) => {
+export const deleteRestaurantService = async (id: string) => {
+  const restaurant = await Restaurant.findById(id);
 
-    const restaurant =
-      await Restaurant.findById(id);
+  if (!restaurant) {
+    throw new ApiError(404, "Restaurant not found");
+  }
 
-    if (!restaurant) {
-      throw new ApiError(
-        404,
-        "Restaurant not found"
-      );
-    }
+  if (restaurant.imagePublicId) {
+    await deleteFromCloudinary(restaurant.imagePublicId);
+  }
 
-    await restaurant.deleteOne();
+  await restaurant.deleteOne();
+};
 
-  };
-
-  // Search restaurants
-export const searchRestaurantsService =
-  async (name: string) => {
-
-    return await Restaurant.find({
-      name: {
-        $regex: name,
-        $options: "i",
-      },
-    })
-      .populate("owner", "name email")
-      .sort({ createdAt: -1 });
-
-  };
-
+// Search restaurants
+export const searchRestaurantsService = async (name: string) => {
+  return await Restaurant.find({
+    name: {
+      $regex: name,
+      $options: "i",
+    },
+  })
+    .populate("owner", "name email")
+    .sort({ createdAt: -1 });
+};
 
 // Get restaurants by category
-export const getRestaurantsByCategoryService =
-  async (category: string) => {
-
-    return await Restaurant.find({
-      category: {
-        $regex: category,
-        $options: "i",
-      },
-    })
-      .populate("owner", "name email")
-      .sort({ createdAt: -1 });
-
-  };
+export const getRestaurantsByCategoryService = async (category: string) => {
+  return await Restaurant.find({
+    category: {
+      $regex: category,
+      $options: "i",
+    },
+  })
+    .populate("owner", "name email")
+    .sort({ createdAt: -1 });
+};

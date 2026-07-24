@@ -20,8 +20,8 @@ router.get("/search", foodController_1.searchFoods);
 router.get("/category/:category", foodController_1.getFoodsByCategory);
 // Get food by ID
 router.get("/:id", foodController_1.getFood);
-// Update food
-router.put("/:id", authMiddleware_1.protect, authMiddleware_1.adminOnly, foodController_1.updateFood);
+// Update food (supports multipart/form-data optional image upload)
+router.put("/:id", authMiddleware_1.protect, authMiddleware_1.adminOnly, uploadMiddleware_1.default.single("image"), foodController_1.updateFood);
 // Update food image
 router.put("/:id/image", authMiddleware_1.protect, authMiddleware_1.adminOnly, uploadMiddleware_1.default.single("image"), foodController_1.updateFoodImage);
 // Delete food

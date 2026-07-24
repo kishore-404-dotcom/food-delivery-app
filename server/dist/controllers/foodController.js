@@ -6,18 +6,30 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteFood = exports.updateFoodImage = exports.updateFood = exports.getFood = exports.getFoodsByCategory = exports.searchFoods = exports.getFoods = exports.createFood = void 0;
 const asyncHandler_1 = __importDefault(require("../middleware/asyncHandler"));
 const apiResponse_1 = require("../utils/apiResponse");
-const uploadToCloudinary_1 = __importDefault(require("../utils/uploadToCloudinary"));
+const food_1 = __importDefault(require("../models/food"));
+const uploadToCloudinary_1 = require("../utils/uploadToCloudinary");
 const foodService_1 = require("../services/foodService");
 // Create food
 exports.createFood = (0, asyncHandler_1.default)(async (req, res) => {
     let imageUrl = "";
+    let imagePublicId = "";
     // Upload image to Cloudinary
     if (req.file) {
-        imageUrl = await (0, uploadToCloudinary_1.default)(req.file.buffer, "foods");
+        const uploadRes = await (0, uploadToCloudinary_1.uploadToCloudinary)(req.file.buffer, "foods");
+        imageUrl = uploadRes.secure_url;
+        imagePublicId = uploadRes.public_id;
+    }
+    else if (req.body.image) {
+        imageUrl = req.body.image;
     }
     const food = await (0, foodService_1.createFoodService)({
-        ...req.body,
+        name: req.body.name,
+        description: req.body.description || req.body.name,
+        price: Number(req.body.price),
+        category: req.body.category || "Main Course",
+        restaurant: req.body.restaurant,
         image: imageUrl,
+        imagePublicId,
     });
     res.status(201).json(new apiResponse_1.ApiResponse(true, "Food created successfully", food));
 });
@@ -47,18 +59,36 @@ exports.getFood = (0, asyncHandler_1.default)(async (req, res) => {
 // Update food
 exports.updateFood = (0, asyncHandler_1.default)(async (req, res) => {
     const { id } = req.params;
-    const food = await (0, foodService_1.updateFoodService)(id, req.body);
+    const existing = await food_1.default.findById(id);
+    const updateData = { ...req.body };
+    if (req.file) {
+        if (existing?.imagePublicId) {
+            await (0, uploadToCloudinary_1.deleteFromCloudinary)(existing.imagePublicId);
+        }
+        const uploadRes = await (0, uploadToCloudinary_1.uploadToCloudinary)(req.file.buffer, "foods");
+        updateData.image = uploadRes.secure_url;
+        updateData.imagePublicId = uploadRes.public_id;
+    }
+    const food = await (0, foodService_1.updateFoodService)(id, updateData);
     res.status(200).json(new apiResponse_1.ApiResponse(true, "Food updated successfully", food));
 });
 // Update food image
 exports.updateFoodImage = (0, asyncHandler_1.default)(async (req, res) => {
     const { id } = req.params;
-    let imageUrl = "";
+    const existing = await food_1.default.findById(id);
+    let imageUrl = existing?.image || "";
+    let imagePublicId = existing?.imagePublicId || "";
     if (req.file) {
-        imageUrl = await (0, uploadToCloudinary_1.default)(req.file.buffer, "foods");
+        if (existing?.imagePublicId) {
+            await (0, uploadToCloudinary_1.deleteFromCloudinary)(existing.imagePublicId);
+        }
+        const uploadRes = await (0, uploadToCloudinary_1.uploadToCloudinary)(req.file.buffer, "foods");
+        imageUrl = uploadRes.secure_url;
+        imagePublicId = uploadRes.public_id;
     }
     const food = await (0, foodService_1.updateFoodService)(id, {
         image: imageUrl,
+        imagePublicId,
     });
     res.status(200).json(new apiResponse_1.ApiResponse(true, "Food image updated successfully", food));
 });

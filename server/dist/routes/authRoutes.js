@@ -14,6 +14,10 @@ const router = express_1.default.Router();
 router.post("/register", authValidator_1.registerValidator, validateRequest_1.default, rateLimiter_1.registerLimiter, authController_1.register);
 // Login user
 router.post("/login", authValidator_1.loginValidator, validateRequest_1.default, rateLimiter_1.authLimiter, authController_1.login);
-// Get logged-in user
+// Get logged-in user profile
 router.get("/profile", authMiddleware_1.protect, authController_1.getProfile);
+// Update logged-in user profile
+router.put("/profile", authMiddleware_1.protect, authController_1.updateProfile);
+// Change user password
+router.put("/change-password", authMiddleware_1.protect, authController_1.changePassword);
 exports.default = router;

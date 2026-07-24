@@ -34,55 +34,31 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const restaurantSchema = new mongoose_1.Schema({
-    name: {
-        type: String,
-        required: true,
-        trim: true,
-    },
-    description: {
-        type: String,
-        required: true,
-    },
-    address: {
-        type: String,
-        required: true,
-    },
-    image: {
-        type: String,
-        default: "",
-    },
-    imagePublicId: {
-        type: String,
-        default: "",
-    },
-    category: {
-        type: String,
-        required: true,
-    },
-    rating: {
-        type: Number,
-        default: 0,
-    },
-    deliveryTime: {
-        type: Number,
-        required: true,
-        default: 30,
-    },
-    deliveryFee: {
-        type: Number,
-        default: 0,
-    },
-    isOpen: {
-        type: Boolean,
-        default: true,
-    },
-    owner: {
+const notificationSchema = new mongoose_1.Schema({
+    user: {
         type: mongoose_1.Schema.Types.ObjectId,
         ref: "User",
         required: true,
+        index: true,
+    },
+    title: {
+        type: String,
+        required: true,
+    },
+    message: {
+        type: String,
+        required: true,
+    },
+    type: {
+        type: String,
+        enum: ["ORDER", "DELIVERY", "PAYMENT", "SYSTEM"],
+        default: "SYSTEM",
+    },
+    isRead: {
+        type: Boolean,
+        default: false,
     },
 }, {
     timestamps: true,
 });
-exports.default = mongoose_1.default.model("Restaurant", restaurantSchema);
+exports.default = mongoose_1.default.model("Notification", notificationSchema);

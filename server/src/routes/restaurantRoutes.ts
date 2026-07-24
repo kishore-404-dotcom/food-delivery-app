@@ -11,13 +11,8 @@ import {
   deleteRestaurant,
 } from "../controllers/restaurantController";
 
-import {
-  protect,
-  adminOnly,
-} from "../middleware/authMiddleware";
-
+import { protect, adminOnly } from "../middleware/authMiddleware";
 import upload from "../middleware/uploadMiddleware";
-
 import validateRequest from "../middleware/validateRequest";
 import { RestaurantValidator } from "../validators/restaurantValidator";
 
@@ -41,19 +36,17 @@ router.get("/", getAllRestaurants);
 router.get("/search", searchRestaurants);
 
 // Get restaurants by category
-router.get(
-  "/category/:category",
-  getRestaurantsByCategory
-);
+router.get("/category/:category", getRestaurantsByCategory);
 
 // Get restaurant by ID
 router.get("/:id", getRestaurantById);
 
-// Update restaurant details
+// Update restaurant details (supports multipart/form-data optional image upload)
 router.put(
   "/:id",
   protect,
   adminOnly,
+  upload.single("image"),
   updateRestaurant
 );
 
@@ -67,11 +60,6 @@ router.put(
 );
 
 // Delete restaurant
-router.delete(
-  "/:id",
-  protect,
-  adminOnly,
-  deleteRestaurant
-);
+router.delete("/:id", protect, adminOnly, deleteRestaurant);
 
 export default router;

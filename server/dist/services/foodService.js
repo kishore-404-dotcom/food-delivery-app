@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteFoodService = exports.updateFoodService = exports.getFoodByIdService = exports.getFoodsByCategoryService = exports.searchFoodsService = exports.getFoodsService = exports.createFoodService = void 0;
 const food_1 = __importDefault(require("../models/food"));
 const apiError_1 = require("../utils/apiError");
+const uploadToCloudinary_1 = require("../utils/uploadToCloudinary");
 const cacheService_1 = require("./cacheService");
 // Create food
 const createFoodService = async (foodData) => {
@@ -51,8 +52,7 @@ const getFoodsByCategoryService = async (category) => {
 exports.getFoodsByCategoryService = getFoodsByCategoryService;
 // Get food by ID
 const getFoodByIdService = async (id) => {
-    const food = await food_1.default.findById(id)
-        .populate("restaurant");
+    const food = await food_1.default.findById(id).populate("restaurant");
     if (!food) {
         throw new apiError_1.ApiError(404, "Food not found");
     }
@@ -76,6 +76,9 @@ const deleteFoodService = async (id) => {
     const food = await food_1.default.findById(id);
     if (!food) {
         throw new apiError_1.ApiError(404, "Food not found");
+    }
+    if (food.imagePublicId) {
+        await (0, uploadToCloudinary_1.deleteFromCloudinary)(food.imagePublicId);
     }
     await food.deleteOne();
 };
