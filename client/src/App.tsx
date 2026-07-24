@@ -11,47 +11,50 @@ import RestaurantDetailPage from "./pages/restaurants/RestaurantDetailPage";
 import FoodsPage from "./pages/foods/FoodsPage";
 
 import { AuthProvider } from "./context/AuthContext";
+import { CartProvider } from "./context/CartContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AdminRoute from "./components/auth/AdminRoute";
 
 function App() {
   return (
     <AuthProvider>
-      <Navbar />
+      <CartProvider>
+        <Navbar />
 
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Home />} />
-        <Route path="/restaurants" element={<RestaurantsPage />} />
-        <Route path="/restaurants/:id" element={<RestaurantDetailPage />} />
-        <Route path="/foods" element={<FoodsPage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Home />} />
+          <Route path="/restaurants" element={<RestaurantsPage />} />
+          <Route path="/restaurants/:id" element={<RestaurantDetailPage />} />
+          <Route path="/foods" element={<FoodsPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-        {/* Protected Customer Routes */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/profile" element={<Profile />} />
-        </Route>
+          {/* Protected Customer Routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/profile" element={<Profile />} />
+          </Route>
 
-        {/* Protected Admin Routes */}
-        <Route element={<AdminRoute />}>
-          <Route
-            path="/admin"
-            element={
-              <div className="min-h-screen p-8 text-center">
-                <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-                <p className="mt-2 text-gray-600">
-                  Welcome to Admin Control Panel (Management features will be connected in Phase 12)
-                </p>
-              </div>
-            }
-          />
-        </Route>
+          {/* Protected Admin Routes */}
+          <Route element={<AdminRoute />}>
+            <Route
+              path="/admin"
+              element={
+                <div className="min-h-screen p-8 text-center">
+                  <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+                  <p className="mt-2 text-gray-600">
+                    Welcome to Admin Control Panel (Management features will be connected in Phase 12)
+                  </p>
+                </div>
+              }
+            />
+          </Route>
 
-        {/* 404 Catch All */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          {/* 404 Catch All */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </CartProvider>
     </AuthProvider>
   );
 }

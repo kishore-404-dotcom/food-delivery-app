@@ -10,9 +10,11 @@ import {
   FaClipboardList,
 } from "react-icons/fa";
 import { useAuth } from "../hooks/useAuth";
+import { useCart } from "../hooks/useCart";
 
 function Navbar() {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { cartCount } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const navigate = useNavigate();
@@ -70,7 +72,7 @@ function Navbar() {
           <Link to="/cart" className="relative text-gray-700 hover:text-orange-500 transition">
             <FaShoppingCart size={22} />
             <span className="absolute -right-2.5 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-xs font-bold text-white shadow">
-              0
+              {cartCount}
             </span>
           </Link>
 
@@ -209,7 +211,7 @@ function Navbar() {
                 >
                   <span>🛒 Cart</span>
                   <span className="rounded-full bg-orange-500 px-2 py-0.5 text-xs text-white">
-                    0
+                    {cartCount}
                   </span>
                 </Link>
               </li>

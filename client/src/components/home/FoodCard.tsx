@@ -11,8 +11,20 @@ interface FoodCardProps {
 const DEFAULT_FOOD_IMAGE =
   "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80";
 
+import { useCart } from "../../hooks/useCart";
+
 function FoodCard({ food, onSelect, onAddToCart }: FoodCardProps) {
   const [imgSrc, setImgSrc] = useState(food.image || DEFAULT_FOOD_IMAGE);
+  const { addItem } = useCart();
+
+  const handleAdd = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onAddToCart) {
+      onAddToCart(food);
+    } else {
+      addItem(food._id, 1, food.name);
+    }
+  };
 
   const restaurantName =
     typeof food.restaurant === "object" && food.restaurant !== null
@@ -76,10 +88,7 @@ function FoodCard({ food, onSelect, onAddToCart }: FoodCardProps) {
           </span>
 
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onAddToCart) onAddToCart(food);
-            }}
+            onClick={handleAdd}
             disabled={!food.isAvailable}
             className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white transition ${
               food.isAvailable

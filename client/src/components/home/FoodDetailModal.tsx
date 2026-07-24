@@ -11,7 +11,10 @@ interface FoodDetailModalProps {
 const DEFAULT_FOOD_IMAGE =
   "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80";
 
+import { useCart } from "../../hooks/useCart";
+
 function FoodDetailModal({ food, onClose, onAddToCart }: FoodDetailModalProps) {
+  const { addItem } = useCart();
   const [imgSrc, setImgSrc] = useState(
     food?.image || DEFAULT_FOOD_IMAGE
   );
@@ -96,7 +99,11 @@ function FoodDetailModal({ food, onClose, onAddToCart }: FoodDetailModalProps) {
 
             <button
               onClick={() => {
-                if (onAddToCart) onAddToCart(food);
+                if (onAddToCart) {
+                  onAddToCart(food);
+                } else {
+                  addItem(food._id, 1, food.name);
+                }
                 onClose();
               }}
               disabled={!food.isAvailable}
