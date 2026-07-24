@@ -14,6 +14,7 @@ import {
 } from "react-icons/fa";
 import { getMyOrders } from "../../services/orderService";
 import type { IOrder, IAddress } from "../../types/food";
+import ReviewModal from "../../components/reviews/ReviewModal";
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -182,9 +183,11 @@ function OrderDetailModal({
 function OrderCard({
   order,
   onSelectOrder,
+  onReviewItem,
 }: {
   order: IOrder;
   onSelectOrder: (order: IOrder) => void;
+  onReviewItem: (orderId: string, foodId: string, foodName: string) => void;
 }) {
   const address =
     typeof order.deliveryAddress === "object" && order.deliveryAddress !== null
@@ -239,7 +242,24 @@ function OrderCard({
               <span className="font-bold text-orange-500">{item.quantity}x</span>
               <span className="font-semibold text-gray-800">{item.name}</span>
             </div>
-            <span className="font-bold text-gray-900">₹{item.price * item.quantity}</span>
+
+            <div className="flex items-center gap-4">
+              <span className="font-bold text-gray-900">₹{item.price * item.quantity}</span>
+              {order.orderStatus === "DELIVERED" && (
+                <button
+                  onClick={() => {
+                    const foodIdStr =
+                      typeof item.food === "object" && item.food !== null
+                        ? item.food._id
+                        : String(item.food);
+                    onReviewItem(order._id, foodIdStr, item.name);
+                  }}
+                  className="rounded-lg bg-orange-50 px-2.5 py-1 text-xs font-bold text-orange-600 border border-orange-200 hover:bg-orange-100 transition"
+                >
+                  ⭐ Review
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -287,6 +307,13 @@ function OrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<IOrder | null>(null);
 
+  // Review Modal State
+  const [reviewingInfo, setReviewingInfo] = useState<{
+    orderId: string;
+    foodId: string;
+    foodName: string;
+  } | null>(null);
+
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
@@ -304,6 +331,10 @@ function OrdersPage() {
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+
+  const handleOpenReviewModal = (orderId: string, foodId: string, foodName: string) => {
+    setReviewingInfo({ orderId, foodId, foodName });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-8">
@@ -375,6 +406,7 @@ function OrdersPage() {
                 key={order._id}
                 order={order}
                 onSelectOrder={(ord) => setSelectedOrder(ord)}
+                onReviewItem={handleOpenReviewModal}
               />
             ))}
           </div>
@@ -385,6 +417,20 @@ function OrdersPage() {
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
         />
+
+        {/* Review Modal */}
+        {reviewingInfo && (
+          <ReviewModal
+            isOpen={Boolean(reviewingInfo)}
+            onClose={() => setReviewingInfo(null)}
+            orderId={reviewingInfo.orderId}
+            foodId={reviewingInfo.foodId}
+            foodName={reviewingInfo.foodName}
+            onSubmitted={() => {
+              fetchOrders();
+            }}
+          />
+        )}
       </div>
     </div>
   );

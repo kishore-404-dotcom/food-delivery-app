@@ -12,6 +12,7 @@ const DEFAULT_FOOD_IMAGE =
   "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80";
 
 import { useCart } from "../../hooks/useCart";
+import ReviewList from "../reviews/ReviewList";
 
 function FoodDetailModal({ food, onClose, onAddToCart }: FoodDetailModalProps) {
   const { addItem } = useCart();
@@ -33,7 +34,7 @@ function FoodDetailModal({ food, onClose, onAddToCart }: FoodDetailModalProps) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl transition"
+        className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl transition"
       >
         {/* Close Button */}
         <button
@@ -89,6 +90,11 @@ function FoodDetailModal({ food, onClose, onAddToCart }: FoodDetailModalProps) {
               <span>Restaurant: <strong>{restaurantName}</strong></span>
             </p>
           )}
+
+          {/* Customer Reviews Section */}
+          <div className="mt-6 border-t pt-4">
+            <ReviewList foodId={food._id} />
+          </div>
 
           {/* Footer Action */}
           <div className="mt-6 flex items-center justify-between border-t pt-5">
