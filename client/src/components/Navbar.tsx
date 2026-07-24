@@ -24,6 +24,10 @@ function Navbar() {
           </li>
 
           <li>
+            <Link to="/restaurants">Restaurants</Link>
+          </li>
+
+          <li>
             <a href="#categories">Menu</a>
           </li>
 
@@ -84,6 +88,17 @@ function Navbar() {
               className="block border-b px-6 py-4 hover:bg-orange-50"
             >
               Home
+            </Link>
+          </li>
+
+          {/* Restaurants */}
+          <li>
+            <Link
+              to="/restaurants"
+              onClick={() => setIsMenuOpen(false)}
+              className="block border-b px-6 py-4 hover:bg-orange-50"
+            >
+              Restaurants
             </Link>
           </li>
 
