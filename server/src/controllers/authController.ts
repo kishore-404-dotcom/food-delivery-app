@@ -4,6 +4,8 @@ import { ApiResponse } from "../utils/apiResponse";
 import {
   registerUser,
   loginUser,
+  updateUserProfileService,
+  changePasswordService,
 } from "../services/authService";
 import User from "../models/user";
 import { AuthRequest } from "../middleware/authMiddleware";
@@ -31,13 +33,39 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 // Get logged-in user profile
 export const getProfile = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-
-    // Find logged-in user
     const user = await User.findById(req.user?.id).select("-password");
 
     res.status(200).json(
       new ApiResponse(true, "Profile fetched successfully", user)
     );
+  }
+);
 
+// Update logged-in user profile
+export const updateProfile = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { name, phone } = req.body;
+
+    const updatedUser = await updateUserProfileService(req.user!.id, {
+      name,
+      phone,
+    });
+
+    res.status(200).json(
+      new ApiResponse(true, "Profile updated successfully", updatedUser)
+    );
+  }
+);
+
+// Change password
+export const changePassword = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { currentPassword, newPassword } = req.body;
+
+    await changePasswordService(req.user!.id, currentPassword, newPassword);
+
+    res.status(200).json(
+      new ApiResponse(true, "Password changed successfully")
+    );
   }
 );

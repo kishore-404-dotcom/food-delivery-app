@@ -12,8 +12,14 @@ import {
   FaHeart,
   FaCreditCard,
   FaBell,
+  FaEdit,
+  FaKey,
+  FaSave,
+  FaTimes,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
+import axios from "axios";
+
 import { useAuth } from "../../hooks/useAuth";
 import type { IAddress } from "../../types/food";
 import AddressCard from "../../components/addresses/AddressCard";
@@ -24,65 +30,165 @@ import {
   updateAddress,
   setDefaultAddress,
   deleteAddress,
+  type CreateAddressInput,
 } from "../../services/addressService";
-import type { CreateAddressInput } from "../../services/addressService";
+import {
+  getUserProfile,
+  updateUserProfile,
+  changePassword,
+} from "../../services/userService";
 
 function Profile() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
+
+  // Profile Edit State
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [nameInput, setNameInput] = useState(user?.name || "");
+  const [phoneInput, setPhoneInput] = useState(user?.phone || "");
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Password Change State
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  // Address State
   const [addresses, setAddresses] = useState<IAddress[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingAddresses, setLoadingAddresses] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<IAddress | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [savingAddress, setSavingAddress] = useState(false);
+
+  // Sync profile data from backend on load
+  const fetchProfileData = useCallback(async () => {
+    try {
+      const freshUser = await getUserProfile();
+      updateUser(freshUser);
+      setNameInput(freshUser.name);
+      setPhoneInput(freshUser.phone);
+    } catch (err: unknown) {
+      console.error("Error fetching fresh profile:", err);
+    }
+  }, [updateUser]);
 
   const fetchAddresses = useCallback(async () => {
     try {
-      setLoading(true);
+      setLoadingAddresses(true);
       setError(null);
       const data = await getMyAddresses();
       setAddresses(data);
     } catch (err: unknown) {
-      console.error("Error loading addresses:", err);
-      setError("Failed to load saved addresses. The server might be starting up.");
+      console.error("Error fetching addresses:", err);
+      setError("Failed to fetch address book");
     } finally {
-      setLoading(false);
+      setLoadingAddresses(false);
     }
   }, []);
 
   useEffect(() => {
+    fetchProfileData();
     fetchAddresses();
-  }, [fetchAddresses]);
+  }, [fetchProfileData, fetchAddresses]);
 
-  const handleOpenAddModal = () => {
-    setEditingAddress(null);
-    setIsModalOpen(true);
-  };
+  // Profile Update Submission
+  const handleProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  const handleOpenEditModal = (address: IAddress) => {
-    setEditingAddress(address);
-    setIsModalOpen(true);
-  };
+    if (!nameInput.trim()) {
+      toast.error("Name cannot be empty");
+      return;
+    }
 
-  const handleSaveAddress = async (formData: Partial<CreateAddressInput>) => {
+    if (!phoneInput.trim()) {
+      toast.error("Phone number cannot be empty");
+      return;
+    }
+
     try {
-      setSaving(true);
+      setSavingProfile(true);
+      const updatedUser = await updateUserProfile({
+        name: nameInput.trim(),
+        phone: phoneInput.trim(),
+      });
+
+      updateUser(updatedUser);
+      toast.success("Profile updated successfully!");
+      setIsEditingProfile(false);
+    } catch (err: unknown) {
+      console.error("Error updating profile:", err);
+      if (axios.isAxiosError(err)) {
+        toast.error(err.response?.data?.message || "Failed to update profile");
+      } else {
+        toast.error("Failed to update profile");
+      }
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  // Password Change Submission
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!currentPassword) {
+      toast.error("Please enter your current password");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error("New password must be at least 6 characters long");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("New passwords do not match");
+      return;
+    }
+
+    try {
+      setSavingPassword(true);
+      await changePassword({ currentPassword, newPassword });
+      toast.success("Password changed successfully!");
+      setIsChangingPassword(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: unknown) {
+      console.error("Error changing password:", err);
+      if (axios.isAxiosError(err)) {
+        toast.error(err.response?.data?.message || "Failed to change password");
+      } else {
+        toast.error("Failed to change password");
+      }
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
+  // Address Handlers
+  const handleAddressSubmit = async (formData: Partial<CreateAddressInput>) => {
+    try {
+      setSavingAddress(true);
       if (editingAddress) {
         await updateAddress(editingAddress._id, formData);
         toast.success("Address updated successfully!");
       } else {
-        await createAddress(formData);
-        toast.success("Address created successfully!");
+        await createAddress(formData as CreateAddressInput);
+        toast.success("Address added successfully!");
       }
       setIsModalOpen(false);
+      setEditingAddress(null);
       fetchAddresses();
     } catch (err: unknown) {
       console.error("Error saving address:", err);
-      toast.error("Failed to save address. Please check input fields.");
+      toast.error("Failed to save address");
     } finally {
-      setSaving(false);
+      setSavingAddress(false);
     }
   };
 
@@ -138,12 +244,130 @@ function Profile() {
                     <FaPhone className="text-orange-400" /> {user?.phone}
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <FaShieldAlt className="text-orange-400" /> Verified User
+                    <FaShieldAlt className="text-orange-400" /> Verified Account
                   </span>
                 </div>
               </div>
             </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsEditingProfile(!isEditingProfile)}
+                className="flex items-center gap-2 rounded-xl bg-orange-50 px-4 py-2.5 text-xs font-bold text-orange-600 border border-orange-200 hover:bg-orange-100 transition"
+              >
+                <FaEdit /> {isEditingProfile ? "Cancel Editing" : "Edit Profile"}
+              </button>
+
+              <button
+                onClick={() => setIsChangingPassword(!isChangingPassword)}
+                className="flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-200 transition"
+              >
+                <FaKey /> {isChangingPassword ? "Cancel Password Change" : "Change Password"}
+              </button>
+            </div>
           </div>
+
+          {/* Edit Profile Form Panel */}
+          {isEditingProfile && (
+            <form onSubmit={handleProfileSubmit} className="rounded-2xl bg-orange-50/40 p-6 border border-orange-100 space-y-4 text-xs">
+              <h3 className="font-bold text-gray-900 text-sm">Edit Account Information</h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">Full Name *</label>
+                  <input
+                    type="text"
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    className="w-full rounded-xl border bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-orange-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">Phone Number *</label>
+                  <input
+                    type="text"
+                    value={phoneInput}
+                    onChange={(e) => setPhoneInput(e.target.value)}
+                    className="w-full rounded-xl border bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-orange-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditingProfile(false)}
+                  className="rounded-xl border px-4 py-2 font-bold text-gray-600 hover:bg-gray-100"
+                >
+                  <FaTimes className="inline mr-1" /> Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={savingProfile}
+                  className="rounded-xl bg-orange-500 px-5 py-2 font-bold text-white shadow hover:bg-orange-600"
+                >
+                  <FaSave className="inline mr-1" /> {savingProfile ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Change Password Form Panel */}
+          {isChangingPassword && (
+            <form onSubmit={handlePasswordSubmit} className="rounded-2xl bg-gray-50 p-6 border space-y-4 text-xs">
+              <h3 className="font-bold text-gray-900 text-sm">Change Security Password</h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">Current Password *</label>
+                  <input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="w-full rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:border-orange-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">New Password (Min 6 chars) *</label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:border-orange-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">Confirm New Password *</label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:border-orange-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsChangingPassword(false)}
+                  className="rounded-xl border px-4 py-2 font-bold text-gray-600 hover:bg-gray-100"
+                >
+                  <FaTimes className="inline mr-1" /> Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={savingPassword}
+                  className="rounded-xl bg-orange-500 px-5 py-2 font-bold text-white shadow hover:bg-orange-600"
+                >
+                  <FaKey className="inline mr-1" /> {savingPassword ? "Updating..." : "Update Password"}
+                </button>
+              </div>
+            </form>
+          )}
 
           {/* Quick Nav Cards */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -202,74 +426,81 @@ function Profile() {
         </div>
 
         {/* Address Management Section */}
-        <div className="rounded-3xl bg-white p-8 shadow-sm border">
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="rounded-3xl bg-white p-8 shadow-sm border space-y-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-4">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <h2 className="text-xl font-extrabold text-gray-900 flex items-center gap-2">
                 <FaMapMarkerAlt className="text-orange-500" /> Saved Delivery Addresses
               </h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Manage your saved delivery locations for faster checkout.
+              <p className="mt-1 text-xs text-gray-500">
+                Manage your home, office, and preferred delivery locations
               </p>
             </div>
 
-            <button
-              onClick={handleOpenAddModal}
-              className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-2.5 font-bold text-white shadow-md hover:bg-orange-600 transition"
-            >
-              <FaPlus /> Add New Address
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={fetchAddresses}
+                className="flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold text-gray-700 hover:bg-orange-50"
+              >
+                <FaRedo /> Refresh
+              </button>
+
+              <button
+                onClick={() => {
+                  setEditingAddress(null);
+                  setIsModalOpen(true);
+                }}
+                className="flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-xs font-bold text-white shadow hover:bg-orange-600 active:scale-95 transition"
+              >
+                <FaPlus /> Add New Address
+              </button>
+            </div>
           </div>
 
           {/* Loading State */}
-          {loading && (
+          {loadingAddresses && (
             <div className="py-12 text-center">
-              <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-orange-500 border-t-transparent"></div>
-              <p className="mt-3 font-medium text-gray-600">Loading addresses...</p>
+              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent"></div>
+              <p className="mt-3 text-xs font-medium text-gray-500">Loading addresses...</p>
             </div>
           )}
 
           {/* Error State */}
-          {!loading && error && (
-            <div className="rounded-2xl bg-red-50 p-6 text-center text-red-600 border border-red-100">
+          {!loadingAddresses && error && (
+            <div className="rounded-2xl bg-red-50 p-6 text-center text-xs text-red-600 border border-red-100">
               <p className="font-bold">{error}</p>
               <button
                 onClick={fetchAddresses}
-                className="mt-3 inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 font-bold text-white shadow"
               >
-                <FaRedo /> Retry
+                <FaRedo /> Retry Now
               </button>
             </div>
           )}
 
           {/* Empty State */}
-          {!loading && !error && addresses.length === 0 && (
-            <div className="rounded-2xl border border-dashed p-10 text-center">
-              <FaMapMarkerAlt className="mx-auto text-4xl text-gray-300 mb-3" />
-              <h3 className="text-lg font-bold text-gray-800">
-                No Addresses Saved
-              </h3>
-              <p className="mt-1 text-xs text-gray-500">
-                You haven't added any delivery addresses yet.
+          {!loadingAddresses && !error && addresses.length === 0 && (
+            <div className="rounded-2xl border border-dashed p-8 text-center text-gray-400">
+              <FaMapMarkerAlt className="mx-auto mb-2 text-3xl text-gray-300" />
+              <p className="font-bold text-gray-700 text-sm">No Saved Addresses Found</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Add a delivery address to complete orders easily during checkout.
               </p>
-              <button
-                onClick={handleOpenAddModal}
-                className="mt-4 rounded-xl bg-orange-500 px-5 py-2 text-xs font-bold text-white hover:bg-orange-600"
-              >
-                Add Your First Address
-              </button>
             </div>
           )}
 
-          {/* Addresses Grid */}
-          {!loading && !error && addresses.length > 0 && (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              {addresses.map((address) => (
+          {/* Address Cards Grid */}
+          {!loadingAddresses && !error && addresses.length > 0 && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {addresses.map((addr) => (
                 <AddressCard
-                  key={address._id}
-                  address={address}
-                  onEdit={handleOpenEditModal}
+                  key={addr._id}
+                  address={addr}
                   onSetDefault={handleSetDefault}
+                  onEdit={(selected) => {
+                    setEditingAddress(selected);
+                    setIsModalOpen(true);
+                  }}
                   onDelete={handleDelete}
                 />
               ))}
@@ -279,13 +510,18 @@ function Profile() {
       </div>
 
       {/* Address Form Modal */}
-      <AddressFormModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmitAddress={handleSaveAddress}
-        initialData={editingAddress}
-        loading={saving}
-      />
+      {isModalOpen && (
+        <AddressFormModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingAddress(null);
+          }}
+          initialData={editingAddress}
+          onSubmitAddress={handleAddressSubmit}
+          loading={savingAddress}
+        />
+      )}
     </div>
   );
 }

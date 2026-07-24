@@ -39,10 +39,7 @@ export const registerUser = async (userData: {
 };
 
 // Login user
-export const loginUser = async (
-  email: string,
-  password: string
-) => {
+export const loginUser = async (email: string, password: string) => {
   // Find user
   const user = await User.findOne({ email });
 
@@ -58,13 +55,9 @@ export const loginUser = async (
   }
 
   // Generate JWT token
-  const token = jwt.sign(
-    { id: user._id.toString() },
-    JWT_SECRET,
-    {
-      expiresIn: "7d",
-    }
-  );
+  const token = jwt.sign({ id: user._id.toString() }, JWT_SECRET, {
+    expiresIn: "7d",
+  });
 
   // Remove password before returning
   const { password: _, ...userResponse } = user.toObject();
@@ -73,4 +66,51 @@ export const loginUser = async (
     token,
     user: userResponse,
   };
+};
+
+// Update Profile (Allowed fields: name, phone)
+export const updateUserProfileService = async (
+  userId: string,
+  data: { name?: string; phone?: string }
+) => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  if (data.name) user.name = data.name.trim();
+  if (data.phone) user.phone = data.phone.trim();
+
+  await user.save();
+
+  const { password: _, ...userResponse } = user.toObject();
+  return userResponse;
+};
+
+// Change Password
+export const changePasswordService = async (
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+) => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const isMatch = await bcrypt.compare(currentPassword, user.password);
+  if (!isMatch) {
+    throw new ApiError(400, "Incorrect current password");
+  }
+
+  if (newPassword.length < 6) {
+    throw new ApiError(400, "New password must be at least 6 characters long");
+  }
+
+  user.password = await bcrypt.hash(newPassword, 10);
+  await user.save();
+
+  return { message: "Password updated successfully" };
 };

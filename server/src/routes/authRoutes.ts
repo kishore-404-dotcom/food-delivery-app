@@ -1,5 +1,11 @@
 import express from "express";
-import { register, login, getProfile } from "../controllers/authController";
+import {
+  register,
+  login,
+  getProfile,
+  updateProfile,
+  changePassword,
+} from "../controllers/authController";
 import { protect } from "../middleware/authMiddleware";
 import {
   registerValidator,
@@ -7,11 +13,7 @@ import {
 } from "../validators/authValidator";
 
 import validateRequest from "../middleware/validateRequest";
-
-import {
-  authLimiter,
-  registerLimiter
-} from "../middleware/rateLimiter";
+import { authLimiter, registerLimiter } from "../middleware/rateLimiter";
 
 const router = express.Router();
 
@@ -21,9 +23,13 @@ router.post("/register", registerValidator, validateRequest, registerLimiter, re
 // Login user
 router.post("/login", loginValidator, validateRequest, authLimiter, login);
 
-// Get logged-in user
+// Get logged-in user profile
 router.get("/profile", protect, getProfile);
 
+// Update logged-in user profile
+router.put("/profile", protect, updateProfile);
 
+// Change user password
+router.put("/change-password", protect, changePassword);
 
 export default router;
