@@ -90,10 +90,25 @@ function CartItemRow({
   );
 }
 
+import CouponSelector from "../../components/coupons/CouponSelector";
+
 function Cart() {
   const { cart, cartTotal, loading, updateQuantity, removeItem, clear } =
     useCart();
   const navigate = useNavigate();
+
+  const [appliedCouponCode, setAppliedCouponCode] = useState<string | null>(null);
+  const [couponDiscount, setCouponDiscount] = useState<number>(0);
+
+  const handleCouponApplied = (discount: number, code: string) => {
+    setCouponDiscount(discount);
+    setAppliedCouponCode(code);
+  };
+
+  const handleCouponRemoved = () => {
+    setCouponDiscount(0);
+    setAppliedCouponCode(null);
+  };
 
   const validItems =
     cart?.items?.filter(
@@ -101,8 +116,8 @@ function Cart() {
     ) || [];
 
   const deliveryFee = cartTotal > 500 || cartTotal === 0 ? 0 : 40;
-  const taxes = Math.round(cartTotal * 0.05);
-  const finalTotal = cartTotal + deliveryFee + taxes;
+  const taxes = Math.round((cartTotal - couponDiscount) * 0.05);
+  const finalTotal = Math.max(0, cartTotal - couponDiscount + deliveryFee + taxes);
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-8">
@@ -160,18 +175,29 @@ function Cart() {
         {/* Cart Contents & Summary Grid */}
         {!loading && validItems.length > 0 && (
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-            {/* Items List */}
-            <div className="space-y-4 lg:col-span-2">
-              {validItems.map((item) => (
-                <CartItemRow
-                  key={(item.food as IFood)._id}
-                  item={{ food: item.food as IFood, quantity: item.quantity }}
-                  onUpdateQuantity={updateQuantity}
-                  onRemove={removeItem}
-                />
-              ))}
+            {/* Items List & Coupons */}
+            <div className="space-y-6 lg:col-span-2">
+              <div className="space-y-4">
+                {validItems.map((item) => (
+                  <CartItemRow
+                    key={(item.food as IFood)._id}
+                    item={{ food: item.food as IFood, quantity: item.quantity }}
+                    onUpdateQuantity={updateQuantity}
+                    onRemove={removeItem}
+                  />
+                ))}
+              </div>
 
-              <div className="pt-4">
+              {/* Coupon Component */}
+              <CouponSelector
+                orderAmount={cartTotal}
+                appliedCode={appliedCouponCode}
+                appliedDiscount={couponDiscount}
+                onCouponApplied={handleCouponApplied}
+                onCouponRemoved={handleCouponRemoved}
+              />
+
+              <div>
                 <Link
                   to="/foods"
                   className="inline-flex items-center gap-2 text-sm font-semibold text-orange-500 hover:text-orange-600"
@@ -192,6 +218,13 @@ function Cart() {
                   <span>Subtotal</span>
                   <span className="font-semibold text-gray-900">₹{cartTotal}</span>
                 </div>
+
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between text-green-600 font-medium">
+                    <span>Discount ({appliedCouponCode})</span>
+                    <span>- ₹{couponDiscount}</span>
+                  </div>
+                )}
 
                 <div className="flex justify-between text-gray-600">
                   <span>Delivery Fee</span>
