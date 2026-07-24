@@ -14,6 +14,7 @@ import CheckoutPage from "./pages/checkout/CheckoutPage";
 import OrdersPage from "./pages/orders/OrdersPage";
 import PaymentsPage from "./pages/payments/PaymentsPage";
 import WishlistPage from "./pages/wishlist/WishlistPage";
+import NotificationsPage from "./pages/notifications/NotificationsPage";
 
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
@@ -44,6 +45,7 @@ function App() {
               <Route path="/orders" element={<OrdersPage />} />
               <Route path="/payments" element={<PaymentsPage />} />
               <Route path="/wishlist" element={<WishlistPage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/profile" element={<Profile />} />
             </Route>
 
