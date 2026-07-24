@@ -97,6 +97,8 @@ export interface IOrder {
   deliveryAddress: string | IAddress;
   items: IOrderItem[];
   totalAmount: number;
+  couponCode?: string;
+  discountAmount?: number;
   paymentMethod: "COD" | "ONLINE";
   paymentStatus: "PENDING" | "PAID" | "FAILED";
   orderStatus:
@@ -119,7 +121,7 @@ export interface IPayment {
   paymentId?: string;
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
-  paymentMethod: "DUMMY" | "RAZORPAY";
+  paymentMethod: "RAZORPAY";
   status: "PENDING" | "SUCCESS" | "FAILED" | "ABANDONED";
   failureReason?: string;
   verifiedAt?: string;

@@ -6,8 +6,8 @@
   command. Do not deploy it as a static site, cron job, or serverless function.
 - Render terminates TLS and supports WebSocket upgrades for Web Services. The Node
   process listens on Render's `PORT` through the shared HTTP server.
-- Set `FRONTEND_URL` to the canonical HTTPS Vercel frontend URL. Preview and
-  production origins ending in `.vercel.app` are also accepted over HTTPS.
+- Set `FRONTEND_URL` to the canonical HTTPS Vercel frontend URL. Other Vercel
+  preview origins are rejected unless explicitly configured as the canonical URL.
 - Keep the service at one instance unless a Socket.IO adapter (for example Redis)
   is configured. Room membership is in process memory.
 

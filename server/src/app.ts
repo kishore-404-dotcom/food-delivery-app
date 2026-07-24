@@ -26,9 +26,11 @@ import { apiLimiter } from "./middleware/rateLimiter";
 
 import requestLogger from "./middleware/requestLogger";
 import { frontendOriginCallback } from "./config/cors";
+import { NODE_ENV } from "./config/env";
 const app = express();
 
 app.set("trust proxy", 1);
+app.disable("x-powered-by");
 
 import {
   swaggerUi,
@@ -43,6 +45,16 @@ app.use(
   })
 );
 app.use(express.json());
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  if (process.env.NODE_ENV === "production") {
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  }
+  next();
+});
 app.use(requestLogger);
 app.use(apiLimiter);
 
@@ -86,8 +98,10 @@ app.use("/api/notifications", notificationRoutes);
 // Wishlist Routes
 app.use("/api/wishlist", wishlistRoutes);
 
-// Swagger Documentation
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// Swagger is a development aid; do not expose the empty scaffold in production.
+if (NODE_ENV !== "production") {
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+}
 
 // 404 handler
 app.use((req, res) => {

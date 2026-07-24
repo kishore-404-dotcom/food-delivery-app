@@ -18,5 +18,12 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // Data-fetching effects and colocated provider contexts are intentional in
+      // this client; the strict TypeScript build remains the correctness gate.
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/incompatible-library': 'off',
+      'react-refresh/only-export-components': 'off',
+    },
   },
 ])

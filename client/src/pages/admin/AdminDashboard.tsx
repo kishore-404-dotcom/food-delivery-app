@@ -21,7 +21,7 @@ import type { IOrder, ICoupon, IPayment, IReview, IRestaurant, IFood, IUser } fr
 import { getAllOrders, updateOrderStatus } from "../../services/orderService";
 import { getCoupons, createCoupon, deleteCoupon } from "../../services/couponService";
 import { getAllPayments } from "../../services/paymentService";
-import { getMyReviews } from "../../services/reviewService";
+import { getAllReviews } from "../../services/reviewService";
 import {
   getAllRestaurants,
   createRestaurant,
@@ -43,6 +43,15 @@ const DEFAULT_RESTAURANT_IMAGE =
 const DEFAULT_FOOD_IMAGE =
   "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=200&q=80";
 
+type AdminTab =
+  | "overview"
+  | "restaurants"
+  | "foods"
+  | "orders"
+  | "coupons"
+  | "payments"
+  | "reviews";
+
 const getUploadErrorMessage = (error: unknown) => {
   if (axios.isAxiosError<{ message?: string }>(error)) {
     return error.response?.data?.message || error.message;
@@ -51,9 +60,7 @@ const getUploadErrorMessage = (error: unknown) => {
 };
 
 export function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<
-    "overview" | "restaurants" | "foods" | "orders" | "coupons" | "payments" | "reviews"
-  >("overview");
+  const [activeTab, setActiveTab] = useState<AdminTab>("overview");
 
   // State
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
@@ -116,7 +123,7 @@ export function AdminDashboard() {
         getAllOrders(),
         getCoupons(),
         getAllPayments(),
-        getMyReviews(),
+        getAllReviews(),
       ]);
 
       if (overviewRes.status === "fulfilled") setOverview(overviewRes.value);
@@ -382,7 +389,7 @@ export function AdminDashboard() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id as AdminTab)}
                 className={`flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold transition whitespace-nowrap ${
                   active
                     ? "bg-orange-500 text-white shadow-md"
@@ -662,7 +669,9 @@ export function AdminDashboard() {
               />
               <select
                 value={newDiscountType}
-                onChange={(e) => setNewDiscountType(e.target.value as any)}
+                onChange={(e) =>
+                  setNewDiscountType(e.target.value as "flat" | "percentage")
+                }
                 className="w-full rounded-xl border p-2 font-bold"
               >
                 <option value="flat">Flat Amount (₹)</option>

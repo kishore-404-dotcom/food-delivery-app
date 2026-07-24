@@ -14,7 +14,12 @@ import {
 import { protect, adminOnly } from "../middleware/authMiddleware";
 import upload from "../middleware/uploadMiddleware";
 import validateRequest from "../middleware/validateRequest";
-import { RestaurantValidator } from "../validators/restaurantValidator";
+import {
+  RestaurantValidator,
+  restaurantIdValidator,
+  restaurantSearchValidator,
+  restaurantUpdateValidator,
+} from "../validators/restaurantValidator";
 
 const router = express.Router();
 
@@ -33,13 +38,13 @@ router.post(
 router.get("/", getAllRestaurants);
 
 // Search restaurants
-router.get("/search", searchRestaurants);
+router.get("/search", restaurantSearchValidator, validateRequest, searchRestaurants);
 
 // Get restaurants by category
 router.get("/category/:category", getRestaurantsByCategory);
 
 // Get restaurant by ID
-router.get("/:id", getRestaurantById);
+router.get("/:id", restaurantIdValidator, validateRequest, getRestaurantById);
 
 // Update restaurant details (supports multipart/form-data optional image upload)
 router.put(
@@ -47,6 +52,8 @@ router.put(
   protect,
   adminOnly,
   upload.single("image"),
+  restaurantUpdateValidator,
+  validateRequest,
   updateRestaurant
 );
 
@@ -56,10 +63,19 @@ router.put(
   protect,
   adminOnly,
   upload.single("image"),
+  restaurantIdValidator,
+  validateRequest,
   updateRestaurantImage
 );
 
 // Delete restaurant
-router.delete("/:id", protect, adminOnly, deleteRestaurant);
+router.delete(
+  "/:id",
+  protect,
+  adminOnly,
+  restaurantIdValidator,
+  validateRequest,
+  deleteRestaurant
+);
 
 export default router;

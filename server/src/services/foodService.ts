@@ -1,7 +1,8 @@
 import Food from "../models/food";
 import { ApiError } from "../utils/apiError";
 import { deleteFromCloudinary } from "../utils/uploadToCloudinary";
-import { getCache, setCache } from "./cacheService";
+import { escapeRegex } from "../utils/escapeRegex";
+import { deleteCache, getCache, setCache } from "./cacheService";
 
 // Create food
 export const createFoodService = async (foodData: {
@@ -13,7 +14,9 @@ export const createFoodService = async (foodData: {
   category: string;
   restaurant: string;
 }) => {
-  return await Food.create(foodData);
+  const food = await Food.create(foodData);
+  await deleteCache("foods");
+  return food;
 };
 
 // Get all foods
@@ -37,7 +40,7 @@ export const getFoodsService = async () => {
 export const searchFoodsService = async (name: string) => {
   return await Food.find({
     name: {
-      $regex: name,
+      $regex: escapeRegex(name.slice(0, 100)),
       $options: "i",
     },
   })
@@ -49,7 +52,7 @@ export const searchFoodsService = async (name: string) => {
 export const getFoodsByCategoryService = async (category: string) => {
   return await Food.find({
     category: {
-      $regex: category,
+      $regex: escapeRegex(category.slice(0, 100)),
       $options: "i",
     },
   })
@@ -65,6 +68,7 @@ export const getFoodByIdService = async (id: string) => {
     throw new ApiError(404, "Food not found");
   }
 
+  await deleteCache("foods");
   return food;
 };
 
@@ -95,4 +99,5 @@ export const deleteFoodService = async (id: string) => {
   }
 
   await food.deleteOne();
+  await deleteCache("foods");
 };

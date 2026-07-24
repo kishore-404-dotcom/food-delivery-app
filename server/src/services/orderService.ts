@@ -6,12 +6,14 @@ import Address from "../models/address";
 
 import { ApiError } from "../utils/apiError";
 import { calculateOrderTotal } from "../utils/orderTotal";
+import { applyCouponService } from "./couponService";
 
 // Place Order
 export const placeOrderService = async (
   userId: string,
   paymentMethod: "COD" | "ONLINE",
-  deliveryAddress: string
+  deliveryAddress: string,
+  couponCode?: string
 ) => {
 
   const session = await mongoose.startSession();
@@ -73,7 +75,13 @@ export const placeOrderService = async (
       }
     );
 
-    const { totalAmount } = calculateOrderTotal(subtotal);
+    const couponResult = couponCode
+      ? await applyCouponService(couponCode, subtotal)
+      : null;
+    const { totalAmount, discountAmount } = calculateOrderTotal(
+      subtotal,
+      couponResult?.discount || 0
+    );
 
     const order = await Order.create(
       [
@@ -82,6 +90,8 @@ export const placeOrderService = async (
           deliveryAddress,
           items: orderItems,
           totalAmount,
+          couponCode: couponResult?.coupon.code,
+          discountAmount,
           paymentMethod,
         },
       ],

@@ -57,3 +57,8 @@ export const getReviewById = async (id: string): Promise<IReview> => {
   const response = await api.get<ApiResponse<IReview>>(`/reviews/${id}`);
   return response.data.data;
 };
+
+export const getAllReviews = async (): Promise<IReview[]> => {
+  const response = await api.get<ApiResponse<PaginatedReviews>>("/reviews");
+  return response.data.data.reviews;
+};

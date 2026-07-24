@@ -8,7 +8,7 @@ export interface IPayment extends Document {
   paymentId?: string;
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
-  paymentMethod: "DUMMY" | "RAZORPAY";
+  paymentMethod: "RAZORPAY";
   status: "PENDING" | "SUCCESS" | "FAILED" | "ABANDONED";
   failureReason?: string;
   verifiedAt?: Date;
@@ -60,7 +60,7 @@ const paymentSchema = new Schema<IPayment>(
 
     paymentMethod: {
       type: String,
-      enum: ["DUMMY", "RAZORPAY"],
+      enum: ["RAZORPAY"],
       default: "RAZORPAY",
     },
 

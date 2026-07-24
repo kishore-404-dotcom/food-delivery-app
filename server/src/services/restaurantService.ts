@@ -1,7 +1,8 @@
 import Restaurant from "../models/restaurant";
 import { ApiError } from "../utils/apiError";
 import { deleteFromCloudinary } from "../utils/uploadToCloudinary";
-import { getCache, setCache } from "./cacheService";
+import { escapeRegex } from "../utils/escapeRegex";
+import { deleteCache, getCache, setCache } from "./cacheService";
 
 // Create restaurant
 export const createRestaurantService = async (restaurantData: {
@@ -15,7 +16,9 @@ export const createRestaurantService = async (restaurantData: {
   deliveryFee?: number;
   owner: string;
 }) => {
-  return await Restaurant.create(restaurantData);
+  const restaurant = await Restaurant.create(restaurantData);
+  await deleteCache("restaurants");
+  return restaurant;
 };
 
 // Get all restaurants
@@ -45,6 +48,7 @@ export const getRestaurantByIdService = async (id: string) => {
     throw new ApiError(404, "Restaurant not found");
   }
 
+  await deleteCache("restaurants");
   return restaurant;
 };
 
@@ -75,13 +79,14 @@ export const deleteRestaurantService = async (id: string) => {
   }
 
   await restaurant.deleteOne();
+  await deleteCache("restaurants");
 };
 
 // Search restaurants
 export const searchRestaurantsService = async (name: string) => {
   return await Restaurant.find({
     name: {
-      $regex: name,
+      $regex: escapeRegex(name.slice(0, 100)),
       $options: "i",
     },
   })
@@ -93,7 +98,7 @@ export const searchRestaurantsService = async (name: string) => {
 export const getRestaurantsByCategoryService = async (category: string) => {
   return await Restaurant.find({
     category: {
-      $regex: category,
+      $regex: escapeRegex(category.slice(0, 100)),
       $options: "i",
     },
   })

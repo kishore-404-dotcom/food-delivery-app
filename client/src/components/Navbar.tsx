@@ -75,7 +75,11 @@ function Navbar() {
         {/* Desktop Right Side */}
         <div className="hidden items-center gap-6 md:flex">
           {/* Cart Icon */}
-          <Link to="/cart" className="relative text-gray-700 hover:text-orange-500 transition">
+          <Link
+            to="/cart"
+            aria-label={`Shopping cart with ${cartCount} items`}
+            className="relative text-gray-700 hover:text-orange-500 transition"
+          >
             <FaShoppingCart size={22} />
             <span className="absolute -right-2.5 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-xs font-bold text-white shadow">
               {cartCount}
@@ -193,6 +197,8 @@ function Navbar() {
         {/* Mobile Menu Button */}
         <button
           onClick={() => setIsMenuOpen(!isMenuOpen)}
+          aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-expanded={isMenuOpen}
           className="text-2xl text-gray-700 md:hidden"
         >
           {isMenuOpen ? <FaTimes /> : <FaBars />}

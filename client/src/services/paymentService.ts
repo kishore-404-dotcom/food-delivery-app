@@ -19,6 +19,13 @@ export interface VerifyRazorpayPaymentInput {
   razorpaySignature: string;
 }
 
+interface PaginatedPayments {
+  total: number;
+  currentPage: number;
+  totalPages: number;
+  payments: IPayment[];
+}
+
 export const createPayment = async (
   orderId: string
 ): Promise<RazorpayCheckoutData> => {
@@ -63,6 +70,6 @@ export const getPaymentById = async (id: string): Promise<IPayment> => {
 };
 
 export const getAllPayments = async (): Promise<IPayment[]> => {
-  const response = await api.get<ApiResponse<IPayment[]>>("/payments");
-  return response.data.data;
+  const response = await api.get<ApiResponse<PaginatedPayments>>("/payments");
+  return response.data.data.payments;
 };

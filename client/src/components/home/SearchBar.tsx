@@ -20,7 +20,11 @@ function SearchBar() {
         onSubmit={handleSearch}
         className="flex flex-col gap-4 rounded-2xl bg-white p-4 shadow-lg sm:flex-row"
       >
+        <label htmlFor="restaurant-search" className="sr-only">
+          Search restaurants
+        </label>
         <input
+          id="restaurant-search"
           type="text"
           placeholder="Search restaurants..."
           value={query}

@@ -1,3 +1,5 @@
+import { FRONTEND_URL, NODE_ENV } from "./env";
+
 const LOCAL_FRONTEND_ORIGINS = new Set([
   "http://localhost:5173",
   "http://localhost:5174",
@@ -7,15 +9,8 @@ const LOCAL_FRONTEND_ORIGINS = new Set([
 
 export const isAllowedFrontendOrigin = (origin?: string): boolean => {
   if (!origin) return true;
-  if (LOCAL_FRONTEND_ORIGINS.has(origin)) return true;
-  if (process.env.FRONTEND_URL === origin) return true;
-
-  try {
-    const url = new URL(origin);
-    return url.protocol === "https:" && url.hostname.endsWith(".vercel.app");
-  } catch {
-    return false;
-  }
+  if (FRONTEND_URL === origin) return true;
+  return NODE_ENV !== "production" && LOCAL_FRONTEND_ORIGINS.has(origin);
 };
 
 export const frontendOriginCallback = (

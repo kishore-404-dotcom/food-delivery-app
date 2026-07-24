@@ -4,6 +4,7 @@ import type { IOrder, ApiResponse } from "../types/food";
 export interface PlaceOrderInput {
   paymentMethod: "COD" | "ONLINE";
   deliveryAddress: string;
+  couponCode?: string;
 }
 
 export const placeOrder = async (data: PlaceOrderInput): Promise<IOrder> => {

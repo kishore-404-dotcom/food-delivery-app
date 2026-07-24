@@ -1,6 +1,7 @@
 import Address from "../models/address";
 
 import { ApiError } from "../utils/apiError";
+import { escapeRegex } from "../utils/escapeRegex";
 
 interface AddressData {
   fullName: string;
@@ -210,23 +211,24 @@ export const getAllAddressesService = async (
   const filter: any = {};
 
   if (search) {
+    const safeSearch = escapeRegex(search);
 
     filter.$or = [
       {
         fullName: {
-          $regex: search,
+          $regex: safeSearch,
           $options: "i",
         },
       },
       {
         city: {
-          $regex: search,
+          $regex: safeSearch,
           $options: "i",
         },
       },
       {
         state: {
-          $regex: search,
+          $regex: safeSearch,
           $options: "i",
         },
       },

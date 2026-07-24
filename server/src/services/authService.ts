@@ -105,8 +105,8 @@ export const changePasswordService = async (
     throw new ApiError(400, "Incorrect current password");
   }
 
-  if (newPassword.length < 6) {
-    throw new ApiError(400, "New password must be at least 6 characters long");
+  if (newPassword.length < 8) {
+    throw new ApiError(400, "New password must be at least 8 characters long");
   }
 
   user.password = await bcrypt.hash(newPassword, 10);

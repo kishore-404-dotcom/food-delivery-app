@@ -17,6 +17,17 @@ import {
   deleteFoodService,
 } from "../services/foodService";
 
+interface FoodUpdateData {
+  name?: string;
+  description?: string;
+  price?: number;
+  category?: string;
+  restaurant?: string;
+  isAvailable?: boolean;
+  image?: string;
+  imagePublicId?: string;
+}
+
 // Create food
 export const createFood = asyncHandler(
   async (req: AuthRequest, res: Response) => {
@@ -133,7 +144,16 @@ export const updateFood = asyncHandler(
     const { id } = req.params as { id: string };
     const existing = await Food.findById(id);
 
-    const updateData: any = { ...req.body };
+    const updateData: FoodUpdateData = {};
+    const stringFields = ["name", "description", "category", "restaurant"] as const;
+    stringFields.forEach((field) => {
+      if (typeof req.body[field] === "string") updateData[field] = req.body[field].trim();
+    });
+    if (req.body.price !== undefined) updateData.price = Number(req.body.price);
+    if (req.body.isAvailable !== undefined) {
+      updateData.isAvailable =
+        req.body.isAvailable === true || req.body.isAvailable === "true";
+    }
 
     let newImagePublicId = "";
     if (req.file) {

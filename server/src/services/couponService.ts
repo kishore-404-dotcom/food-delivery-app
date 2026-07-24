@@ -99,30 +99,12 @@ export const applyCouponService =
       );
     }
 
-    let discount = 0;
-
-    // Flat discount
-    if (
-      coupon.discountType ===
-      "flat"
-    ) {
-      discount =
-        coupon.discountValue;
-    }
-
-    // Percentage discount
-    if (
-      coupon.discountType ===
-      "percentage"
-    ) {
-      discount =
-        (totalAmount *
-          coupon.discountValue) /
-        100;
-    }
-
-    const finalAmount =
-      totalAmount - discount;
+    const rawDiscount =
+      coupon.discountType === "flat"
+        ? coupon.discountValue
+        : (totalAmount * coupon.discountValue) / 100;
+    const discount = Math.min(totalAmount, Math.max(0, Math.round(rawDiscount)));
+    const finalAmount = totalAmount - discount;
 
     return {
       coupon,

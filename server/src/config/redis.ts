@@ -1,15 +1,36 @@
 import { createClient } from "redis";
 
 import { REDIS_URL } from "./env";
+import logger from "./logger";
 
-const redisClient = createClient({
-  url: REDIS_URL,
+const redisClient = createClient(REDIS_URL ? { url: REDIS_URL } : {});
+
+redisClient.on("error", (error) => {
+  logger.warn(
+    `Redis cache unavailable: ${error instanceof Error ? error.message : "unknown error"}`
+  );
 });
 
-redisClient.on("error", (err) => {
-  console.log("Redis Error:", err);
-});
+let connectionPromise: Promise<boolean> | null = null;
 
-redisClient.connect();
+export const ensureRedisConnection = async (): Promise<boolean> => {
+  if (!REDIS_URL) return false;
+  if (redisClient.isReady) return true;
+  if (connectionPromise) return connectionPromise;
+
+  connectionPromise = redisClient
+    .connect()
+    .then(() => true)
+    .catch(() => false)
+    .finally(() => {
+      connectionPromise = null;
+    });
+
+  return connectionPromise;
+};
+
+export const closeRedis = async (): Promise<void> => {
+  if (redisClient.isOpen) await redisClient.quit();
+};
 
 export default redisClient;

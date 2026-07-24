@@ -17,6 +17,18 @@ import {
   getRestaurantsByCategoryService,
 } from "../services/restaurantService";
 
+interface RestaurantUpdateData {
+  name?: string;
+  description?: string;
+  address?: string;
+  category?: string;
+  deliveryTime?: number;
+  deliveryFee?: number;
+  isOpen?: boolean;
+  image?: string;
+  imagePublicId?: string;
+}
+
 // Create restaurant
 export const createRestaurant = asyncHandler(
   async (req: AuthRequest, res: Response) => {
@@ -135,7 +147,20 @@ export const updateRestaurant = asyncHandler(
     const { id } = req.params as { id: string };
     const existing = await Restaurant.findById(id);
 
-    const updateData: any = { ...req.body };
+    const updateData: RestaurantUpdateData = {};
+    const stringFields = ["name", "description", "address", "category"] as const;
+    stringFields.forEach((field) => {
+      if (typeof req.body[field] === "string") updateData[field] = req.body[field].trim();
+    });
+    if (req.body.deliveryTime !== undefined) {
+      updateData.deliveryTime = Number(req.body.deliveryTime);
+    }
+    if (req.body.deliveryFee !== undefined) {
+      updateData.deliveryFee = Number(req.body.deliveryFee);
+    }
+    if (req.body.isOpen !== undefined) {
+      updateData.isOpen = req.body.isOpen === true || req.body.isOpen === "true";
+    }
 
     let newImagePublicId = "";
     if (req.file) {

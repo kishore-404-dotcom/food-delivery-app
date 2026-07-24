@@ -4,8 +4,10 @@ import FoodCard from "./FoodCard";
 import FoodDetailModal from "./FoodDetailModal";
 import { getFoods } from "../../services/foodService";
 import type { IFood } from "../../types/food";
+import { useCart } from "../../hooks/useCart";
 
 function FoodGrid() {
+  const { addItem } = useCart();
   const [foods, setFoods] = useState<IFood[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,9 +33,8 @@ function FoodGrid() {
     fetchFoodsData();
   }, [fetchFoodsData]);
 
-  const handleAddToCart = (food: IFood) => {
-    console.log("Add to cart trigger:", food);
-    // Cart state integration will occur in Phase 3 (Cart)
+  const handleAddToCart = async (food: IFood) => {
+    await addItem(food._id, 1, food.name);
   };
 
   return (

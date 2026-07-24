@@ -3,6 +3,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  useMemo,
 } from "react";
 import type { ReactNode } from "react";
 import { toast } from "react-toastify";
@@ -65,19 +66,23 @@ export function WishlistProvider({ children }: WishlistProviderProps) {
   }, [fetchWishlistData]);
 
   // Set of wishlisted food IDs for O(1) lookup
-  const wishlistedIds = new Set(
-    wishlist?.items
-      ?.map((item) =>
-        typeof item.food === "object" && item.food !== null
-          ? (item.food as IFood)._id
-          : String(item.food)
-      )
-      .filter(Boolean) || []
+  const wishlistedIds = useMemo(
+    () =>
+      new Set(
+        wishlist?.items
+          ?.map((item) =>
+            typeof item.food === "object" && item.food !== null
+              ? (item.food as IFood)._id
+              : String(item.food)
+          )
+          .filter(Boolean) || []
+      ),
+    [wishlist]
   );
 
   const isWishlisted = useCallback(
     (foodId: string) => wishlistedIds.has(foodId),
-    [wishlist]
+    [wishlistedIds]
   );
 
   const toggleWishlist = useCallback(

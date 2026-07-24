@@ -12,6 +12,8 @@ export interface IOrder extends Document {
   deliveryAddress: mongoose.Types.ObjectId;
   items: IOrderItem[];
   totalAmount: number;
+  couponCode?: string;
+  discountAmount: number;
   paymentMethod: "COD" | "ONLINE";
   paymentStatus: "PENDING" | "PAID" | "FAILED";
   orderStatus:
@@ -75,6 +77,18 @@ const orderSchema = new Schema<IOrder>(
       type: String,
       enum: ["COD", "ONLINE"],
       default: "COD",
+    },
+
+    couponCode: {
+      type: String,
+      trim: true,
+      uppercase: true,
+    },
+
+    discountAmount: {
+      type: Number,
+      min: 0,
+      default: 0,
     },
 
     paymentStatus: {

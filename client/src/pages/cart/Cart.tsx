@@ -251,7 +251,14 @@ function Cart() {
               </div>
 
               <button
-                onClick={() => navigate("/checkout")}
+                onClick={() =>
+                  navigate("/checkout", {
+                    state: {
+                      couponCode: appliedCouponCode,
+                      couponDiscount,
+                    },
+                  })
+                }
                 className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-orange-500 py-4 font-bold text-white shadow-md transition hover:bg-orange-600 active:scale-95"
               >
                 Proceed to Checkout <FaArrowRight />

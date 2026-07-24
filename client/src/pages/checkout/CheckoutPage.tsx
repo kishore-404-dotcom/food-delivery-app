@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import {
   FaMapMarkerAlt,
   FaMoneyBillWave,
@@ -34,6 +34,15 @@ import {
 function CheckoutPage() {
   const { cart, cartTotal, refreshCart } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
+  const couponState = location.state as
+    | { couponCode?: string | null; couponDiscount?: number }
+    | null;
+  const couponCode = couponState?.couponCode || undefined;
+  const couponDiscount = Math.min(
+    cartTotal,
+    Math.max(0, Number(couponState?.couponDiscount) || 0)
+  );
 
   const [addresses, setAddresses] = useState<IAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -96,8 +105,8 @@ function CheckoutPage() {
     ) || [];
 
   const deliveryFee = cartTotal > 500 || cartTotal === 0 ? 0 : 40;
-  const taxes = Math.round(cartTotal * 0.05);
-  const finalTotal = cartTotal + deliveryFee + taxes;
+  const taxes = Math.round((cartTotal - couponDiscount) * 0.05);
+  const finalTotal = cartTotal - couponDiscount + deliveryFee + taxes;
 
   const completeVerification = async (input: VerifyRazorpayPaymentInput) => {
     try {
@@ -209,6 +218,7 @@ function CheckoutPage() {
       const order = await placeOrder({
         paymentMethod,
         deliveryAddress: selectedAddressId,
+        couponCode,
       });
 
       if (paymentMethod === "ONLINE") {
@@ -324,8 +334,10 @@ function CheckoutPage() {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {/* COD */}
-                <div
+                <button
+                  type="button"
                   onClick={() => setPaymentMethod("COD")}
+                  aria-pressed={paymentMethod === "COD"}
                   className={`cursor-pointer rounded-2xl border p-5 transition ${
                     paymentMethod === "COD"
                       ? "border-2 border-orange-500 bg-orange-50/20"
@@ -346,11 +358,13 @@ function CheckoutPage() {
                       <FaCheckCircle className="text-orange-500 text-xl" />
                     )}
                   </div>
-                </div>
+                </button>
 
                 {/* ONLINE */}
-                <div
+                <button
+                  type="button"
                   onClick={() => setPaymentMethod("ONLINE")}
+                  aria-pressed={paymentMethod === "ONLINE"}
                   className={`cursor-pointer rounded-2xl border p-5 transition ${
                     paymentMethod === "ONLINE"
                       ? "border-2 border-orange-500 bg-orange-50/20"
@@ -371,7 +385,7 @@ function CheckoutPage() {
                       <FaCheckCircle className="text-orange-500 text-xl" />
                     )}
                   </div>
-                </div>
+                </button>
               </div>
             </div>
           </div>
@@ -417,6 +431,13 @@ function CheckoutPage() {
                   )}
                 </span>
               </div>
+
+              {couponCode && couponDiscount > 0 && (
+                <div className="flex justify-between font-medium text-green-600">
+                  <span>Discount ({couponCode})</span>
+                  <span>- ₹{couponDiscount}</span>
+                </div>
+              )}
 
               <div className="flex justify-between text-gray-600">
                 <span>Taxes (5%)</span>

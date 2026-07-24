@@ -1,5 +1,6 @@
 import swaggerJSDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
+import { PORT } from "./env";
 
 
 const options = {
@@ -22,7 +23,7 @@ const options = {
     servers: [
 
       {
-        url: "http://localhost:5000",
+        url: process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`,
       },
 
     ],

@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { Navigate, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
-import { toast } from "react-toastify";
 
 interface AdminRouteProps {
   children?: ReactNode;
@@ -25,7 +24,6 @@ export function AdminRoute({ children }: AdminRouteProps) {
   }
 
   if (!isAdmin) {
-    toast.error("Access denied: Admin permissions required");
     return <Navigate to="/" replace />;
   }
 

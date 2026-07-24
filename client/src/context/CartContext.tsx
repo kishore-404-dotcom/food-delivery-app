@@ -84,6 +84,18 @@ export function CartProvider({ children }: CartProviderProps) {
     [isAuthenticated]
   );
 
+  // Remove item
+  const removeItem = useCallback(async (foodId: string) => {
+    try {
+      const updatedCart = await apiRemoveFromCart(foodId);
+      setCart(updatedCart);
+      toast.success("Item removed from cart");
+    } catch (err: unknown) {
+      console.error("Error removing item from cart:", err);
+      toast.error("Failed to remove item from cart");
+    }
+  }, []);
+
   // Update quantity
   const updateQuantity = useCallback(
     async (foodId: string, quantity: number) => {
@@ -99,20 +111,8 @@ export function CartProvider({ children }: CartProviderProps) {
         toast.error("Failed to update cart quantity");
       }
     },
-    []
+    [removeItem]
   );
-
-  // Remove item
-  const removeItem = useCallback(async (foodId: string) => {
-    try {
-      const updatedCart = await apiRemoveFromCart(foodId);
-      setCart(updatedCart);
-      toast.success("Item removed from cart");
-    } catch (err: unknown) {
-      console.error("Error removing item from cart:", err);
-      toast.error("Failed to remove item from cart");
-    }
-  }, []);
 
   // Clear cart
   const clear = useCallback(async () => {

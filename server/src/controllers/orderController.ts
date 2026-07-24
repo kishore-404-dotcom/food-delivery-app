@@ -24,6 +24,7 @@ export const placeOrder = asyncHandler(
       {
         paymentMethod: "COD" | "ONLINE";
         deliveryAddress: string;
+        couponCode?: string;
       }
     >,
     res: Response
@@ -33,7 +34,8 @@ export const placeOrder = asyncHandler(
       await placeOrderService(
         req.user!.id,
         req.body.paymentMethod,
-        req.body.deliveryAddress
+        req.body.deliveryAddress,
+        req.body.couponCode
       );
 
     emitToUser(req.user!.id, "order:created", order);

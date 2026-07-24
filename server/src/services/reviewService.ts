@@ -3,6 +3,7 @@ import Order from "../models/order";
 import Review from "../models/review";
 
 import { ApiError } from "../utils/apiError";
+import { escapeRegex } from "../utils/escapeRegex";
 
 // -------------------------------------
 // Update Food Rating
@@ -212,7 +213,7 @@ export const getReviewsByFoodService = async (
 
   if (search) {
     filter.comment = {
-      $regex: search,
+      $regex: escapeRegex(search),
       $options: "i",
     };
   }
@@ -301,7 +302,7 @@ export const getAllReviewsService = async (
 
   if (search) {
     filter.comment = {
-      $regex: search,
+      $regex: escapeRegex(search),
       $options: "i",
     };
   }

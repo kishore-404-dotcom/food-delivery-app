@@ -6,7 +6,7 @@ import { ClipLoader } from "react-spinners";
 import { toast } from "react-toastify";
 import axios from "axios";
 
-import api, { API_BASE_URL } from "../../services/api";
+import api from "../../services/api";
 
 type RegisterForm = {
   name: string;
@@ -57,14 +57,10 @@ function Register() {
         password: formData.password,
       };
 
-      console.log("Register API URL:", `${API_BASE_URL}/auth/register`);
-
       const response = await api.post<RegisterResponse>(
         "/auth/register",
         payload
       );
-
-      console.log("Register response:", response.data);
 
       toast.success(
         response.data.message ||
@@ -73,14 +69,7 @@ function Register() {
 
       navigate("/login");
     } catch (error: unknown) {
-      console.error("Registration error:", error);
-
       if (axios.isAxiosError(error)) {
-        console.error(
-          "Backend registration response:",
-          error.response?.data
-        );
-
         const backendData = error.response?.data as
           | {
               message?: string;

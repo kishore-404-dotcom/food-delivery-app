@@ -28,3 +28,19 @@ export const loginValidator = [
     .notEmpty()
     .withMessage("Password is required"),
 ];
+
+export const profileUpdateValidator = [
+  body("name").optional().trim().isLength({ min: 2, max: 80 }),
+  body("phone").optional().trim().matches(/^[0-9]{10,15}$/),
+  body().custom((value) => {
+    if (!value.name && !value.phone) {
+      throw new Error("Name or phone is required");
+    }
+    return true;
+  }),
+];
+
+export const changePasswordValidator = [
+  body("currentPassword").isString().notEmpty(),
+  body("newPassword").isString().isLength({ min: 8, max: 128 }),
+];

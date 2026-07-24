@@ -6,7 +6,7 @@ import { ClipLoader } from "react-spinners";
 import { toast } from "react-toastify";
 import axios from "axios";
 
-import api, { API_BASE_URL } from "../../services/api";
+import api from "../../services/api";
 
 type LoginForm = {
   email: string;
@@ -51,14 +51,10 @@ function Login() {
     try {
       setLoading(true);
 
-      console.log("Login API URL:", `${API_BASE_URL}/auth/login`);
-
       const response = await api.post<LoginResponse>(
         "/auth/login",
         formData
       );
-
-      console.log("Login response:", response.data);
 
       const token =
         response.data.token ??
@@ -69,11 +65,6 @@ function Login() {
         response.data.data?.user;
 
       if (!token || !user) {
-        console.error(
-          "Login succeeded but incomplete data was returned:",
-          response.data
-        );
-
         toast.error(
           "Login succeeded, but user data was missing from server"
         );
@@ -90,14 +81,7 @@ function Login() {
       const fromPath = (location.state as { from?: { pathname?: string } })?.from?.pathname || "/";
       navigate(fromPath, { replace: true });
     } catch (error: unknown) {
-      console.error("Login error:", error);
-
       if (axios.isAxiosError(error)) {
-        console.error(
-          "Backend login response:",
-          error.response?.data
-        );
-
         const backendData = error.response?.data as
           | {
               message?: string;

@@ -7,6 +7,7 @@ import { RAZORPAY_KEY_ID } from "../config/env";
 import { RazorpayPaymentProvider } from "../providers/paymentProvider";
 import { ApiError } from "../utils/apiError";
 import { verifyRazorpaySignature } from "../utils/razorpaySignature";
+import { escapeRegex } from "../utils/escapeRegex";
 
 export interface RazorpayCheckoutPayload {
   keyId: string;
@@ -277,10 +278,11 @@ export const getAllPaymentsService = async (
   if (status) filter.status = status as IPayment["status"];
   if (paymentMethod) filter.paymentMethod = paymentMethod as IPayment["paymentMethod"];
   if (search) {
+    const safeSearch = escapeRegex(search);
     filter.$or = [
-      { paymentId: { $regex: search, $options: "i" } },
-      { razorpayOrderId: { $regex: search, $options: "i" } },
-      { razorpayPaymentId: { $regex: search, $options: "i" } },
+      { paymentId: { $regex: safeSearch, $options: "i" } },
+      { razorpayOrderId: { $regex: safeSearch, $options: "i" } },
+      { razorpayPaymentId: { $regex: safeSearch, $options: "i" } },
     ];
   }
 

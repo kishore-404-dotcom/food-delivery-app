@@ -32,12 +32,14 @@ describe("Razorpay payment security", () => {
   it("calculates the payable amount from the server subtotal", () => {
     expect(calculateOrderTotal(400)).toEqual({
       subtotal: 400,
+      discountAmount: 0,
       deliveryFee: 40,
       taxes: 20,
       totalAmount: 460,
     });
     expect(calculateOrderTotal(600)).toEqual({
       subtotal: 600,
+      discountAmount: 0,
       deliveryFee: 0,
       taxes: 30,
       totalAmount: 630,

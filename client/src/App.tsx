@@ -1,21 +1,6 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
-import Home from "./pages/home/Home";
-import Login from "./pages/login/Login";
-import Register from "./pages/register/Register";
-import Cart from "./pages/cart/Cart";
-import Profile from "./pages/profile/Profile";
-import NotFound from "./pages/notFound/NotFound";
-import RestaurantsPage from "./pages/restaurants/RestaurantsPage";
-import RestaurantDetailPage from "./pages/restaurants/RestaurantDetailPage";
-import FoodsPage from "./pages/foods/FoodsPage";
-
-import CheckoutPage from "./pages/checkout/CheckoutPage";
-import OrdersPage from "./pages/orders/OrdersPage";
-import PaymentsPage from "./pages/payments/PaymentsPage";
-import WishlistPage from "./pages/wishlist/WishlistPage";
-import NotificationsPage from "./pages/notifications/NotificationsPage";
-import AdminDashboard from "./pages/admin/AdminDashboard";
 
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
@@ -23,6 +8,26 @@ import { WishlistProvider } from "./context/WishlistContext";
 import { RealtimeProvider } from "./context/RealtimeContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AdminRoute from "./components/auth/AdminRoute";
+
+const Home = lazy(() => import("./pages/home/Home"));
+const Login = lazy(() => import("./pages/login/Login"));
+const Register = lazy(() => import("./pages/register/Register"));
+const Cart = lazy(() => import("./pages/cart/Cart"));
+const Profile = lazy(() => import("./pages/profile/Profile"));
+const NotFound = lazy(() => import("./pages/notFound/NotFound"));
+const RestaurantsPage = lazy(() => import("./pages/restaurants/RestaurantsPage"));
+const RestaurantDetailPage = lazy(
+  () => import("./pages/restaurants/RestaurantDetailPage")
+);
+const FoodsPage = lazy(() => import("./pages/foods/FoodsPage"));
+const CheckoutPage = lazy(() => import("./pages/checkout/CheckoutPage"));
+const OrdersPage = lazy(() => import("./pages/orders/OrdersPage"));
+const PaymentsPage = lazy(() => import("./pages/payments/PaymentsPage"));
+const WishlistPage = lazy(() => import("./pages/wishlist/WishlistPage"));
+const NotificationsPage = lazy(
+  () => import("./pages/notifications/NotificationsPage")
+);
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 
 function App() {
   return (
@@ -32,6 +37,17 @@ function App() {
           <WishlistProvider>
           <Navbar />
 
+          <Suspense
+            fallback={
+              <div className="flex min-h-[60vh] items-center justify-center">
+                <div
+                  className="h-12 w-12 animate-spin rounded-full border-4 border-orange-500 border-t-transparent"
+                  role="status"
+                  aria-label="Loading page"
+                />
+              </div>
+            }
+          >
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Home />} />
@@ -60,6 +76,7 @@ function App() {
             {/* 404 Catch All */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
           </WishlistProvider>
         </CartProvider>
       </RealtimeProvider>

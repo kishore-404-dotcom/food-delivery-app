@@ -81,7 +81,6 @@ export const paymentQueryValidator = [
   query("paymentMethod")
     .optional()
     .isIn([
-      "DUMMY",
       "RAZORPAY",
     ])
     .withMessage("Invalid payment method"),

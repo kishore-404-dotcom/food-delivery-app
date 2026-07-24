@@ -10,6 +10,8 @@ import { protect } from "../middleware/authMiddleware";
 import {
   registerValidator,
   loginValidator,
+  profileUpdateValidator,
+  changePasswordValidator,
 } from "../validators/authValidator";
 
 import validateRequest from "../middleware/validateRequest";
@@ -27,9 +29,22 @@ router.post("/login", loginValidator, validateRequest, authLimiter, login);
 router.get("/profile", protect, getProfile);
 
 // Update logged-in user profile
-router.put("/profile", protect, updateProfile);
+router.put(
+  "/profile",
+  protect,
+  profileUpdateValidator,
+  validateRequest,
+  updateProfile
+);
 
 // Change user password
-router.put("/change-password", protect, changePassword);
+router.put(
+  "/change-password",
+  protect,
+  authLimiter,
+  changePasswordValidator,
+  validateRequest,
+  changePassword
+);
 
 export default router;

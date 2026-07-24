@@ -4,7 +4,6 @@ import {
   FaEnvelope,
   FaCheckCircle,
   FaBoxOpen,
-  FaPaperPlane,
   FaTrash,
   FaCheck,
   FaRedo,
@@ -17,19 +16,14 @@ import {
   markAsRead,
   markAllAsRead,
   deleteNotification,
-  sendWelcomeNotification,
-  sendOrderPlacedNotification,
-  sendDeliveredNotification,
-  sendPaymentNotification,
   type INotificationItem,
 } from "../../services/notificationService";
 
 function NotificationsPage() {
-  const { user, isAdmin, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { latestNotification, refreshUnreadNotifications } = useRealtime();
   const [notifications, setNotifications] = useState<INotificationItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [sending, setSending] = useState<boolean>(false);
 
   const fetchNotifications = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -94,36 +88,6 @@ function NotificationsPage() {
     }
   };
 
-  const handleTestNotification = async (type: string) => {
-    if (!user?.email) {
-      toast.error("User email is required");
-      return;
-    }
-
-    try {
-      setSending(true);
-      if (type === "welcome") {
-        await sendWelcomeNotification(user.email, user.name || "Customer");
-        toast.success(`Welcome email sent to ${user.email}!`);
-      } else if (type === "order") {
-        await sendOrderPlacedNotification(user.email, "ORD-DEMO-1001");
-        toast.success(`Order confirmation email sent to ${user.email}!`);
-      } else if (type === "delivered") {
-        await sendDeliveredNotification(user.email, "ORD-DEMO-1001");
-        toast.success(`Delivery notification email sent to ${user.email}!`);
-      } else if (type === "payment") {
-        await sendPaymentNotification(user.email, 450);
-        toast.success(`Payment receipt email sent to ${user.email}!`);
-      }
-      fetchNotifications();
-    } catch (err: unknown) {
-      console.error("Error triggering notification:", err);
-      toast.error("Failed to send notification email (Admin permissions required)");
-    } finally {
-      setSending(false);
-    }
-  };
-
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
@@ -165,49 +129,6 @@ function NotificationsPage() {
             )}
           </div>
         </div>
-
-        {/* Admin Test Dispatcher Box */}
-        {isAdmin && (
-          <div className="rounded-3xl bg-gray-900 p-6 text-white shadow-md space-y-3">
-            <div className="flex items-center gap-2">
-              <FaPaperPlane className="text-orange-400 text-xl" />
-              <h3 className="font-bold text-lg">Admin Email Test Console</h3>
-            </div>
-            <p className="text-xs text-gray-400">
-              Test sending transactional notification emails to <strong>{user?.email}</strong>.
-            </p>
-            <div className="flex flex-wrap gap-3 pt-2">
-              <button
-                onClick={() => handleTestNotification("welcome")}
-                disabled={sending}
-                className="rounded-xl bg-orange-500 px-4 py-2 text-xs font-bold text-white hover:bg-orange-600 shadow"
-              >
-                Send Welcome Email
-              </button>
-              <button
-                onClick={() => handleTestNotification("order")}
-                disabled={sending}
-                className="rounded-xl bg-orange-500 px-4 py-2 text-xs font-bold text-white hover:bg-orange-600 shadow"
-              >
-                Send Order Email
-              </button>
-              <button
-                onClick={() => handleTestNotification("delivered")}
-                disabled={sending}
-                className="rounded-xl bg-orange-500 px-4 py-2 text-xs font-bold text-white hover:bg-orange-600 shadow"
-              >
-                Send Delivery Email
-              </button>
-              <button
-                onClick={() => handleTestNotification("payment")}
-                disabled={sending}
-                className="rounded-xl bg-orange-500 px-4 py-2 text-xs font-bold text-white hover:bg-orange-600 shadow"
-              >
-                Send Payment Email
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Loading State */}
         {loading && (

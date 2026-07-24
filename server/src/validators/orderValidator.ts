@@ -10,6 +10,13 @@ export const orderValidator = [
     .isMongoId()
     .withMessage("Valid delivery address is required"),
 
+  body("couponCode")
+    .optional({ values: "falsy" })
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .matches(/^[A-Za-z0-9_-]+$/)
+    .withMessage("Invalid coupon code"),
+
 ];
 
 export const orderStatusValidator = [

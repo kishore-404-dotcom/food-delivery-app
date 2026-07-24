@@ -67,4 +67,7 @@ export const reviewQueryValidator = [
       "-createdAt",
     ])
     .withMessage("Invalid sort field"),
+
+  query("rating").optional().isInt({ min: 1, max: 5 }),
+  query("search").optional().trim().isLength({ max: 100 }),
 ];

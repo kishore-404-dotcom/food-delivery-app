@@ -37,23 +37,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const initAuth = async () => {
       try {
         const storedToken = localStorage.getItem("token");
-        const storedUser = localStorage.getItem("user");
-
         if (storedToken) {
           setToken(storedToken);
           try {
             const freshUser = await getUserProfile();
             setUser(freshUser);
             localStorage.setItem("user", JSON.stringify(freshUser));
-          } catch (e) {
-            console.error("Failed to fetch fresh profile from API:", e);
-            if (storedUser) {
-              setUser(JSON.parse(storedUser));
-            }
+          } catch {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            setToken(null);
+            setUser(null);
           }
         }
-      } catch (err) {
-        console.error("Error reading authentication data from storage:", err);
+      } catch {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        setToken(null);
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -69,8 +70,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       localStorage.setItem("user", JSON.stringify(newUser));
       setToken(newToken);
       setUser(newUser);
-    } catch (e) {
-      console.error("Error persisting auth session:", e);
+    } catch {
+      setToken(null);
+      setUser(null);
     }
   }, []);
 
@@ -81,8 +83,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       localStorage.removeItem("user");
       setToken(null);
       setUser(null);
-    } catch (e) {
-      console.error("Error clearing auth session:", e);
+    } catch {
+      setToken(null);
+      setUser(null);
     }
   }, []);
 
@@ -91,8 +94,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       localStorage.setItem("user", JSON.stringify(updatedUser));
       setUser(updatedUser);
-    } catch (e) {
-      console.error("Error updating user state:", e);
+    } catch {
+      setUser(updatedUser);
     }
   }, []);
 

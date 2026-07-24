@@ -14,7 +14,11 @@ import {
 } from "../middleware/authMiddleware";
 
 import validateRequest from "../middleware/validateRequest";
-import { couponValidator } from "../validators/couponValidator";
+import {
+  couponApplyValidator,
+  couponIdValidator,
+  couponValidator,
+} from "../validators/couponValidator";
 
 const router = express.Router();
 
@@ -38,6 +42,8 @@ router.get("/:code", getCouponByCode);
 router.post(
   "/apply",
   protect,
+  couponApplyValidator,
+  validateRequest,
   applyCoupon
 );
 
@@ -46,6 +52,8 @@ router.delete(
   "/:id",
   protect,
   adminOnly,
+  couponIdValidator,
+  validateRequest,
   deleteCoupon
 );
 
