@@ -35,15 +35,21 @@ export const createFood = asyncHandler(
       imageUrl = req.body.image;
     }
 
-    const food = await createFoodService({
-      name: req.body.name,
-      description: req.body.description || req.body.name,
-      price: Number(req.body.price),
-      category: req.body.category || "Main Course",
-      restaurant: req.body.restaurant,
-      image: imageUrl,
-      imagePublicId,
-    });
+    let food;
+    try {
+      food = await createFoodService({
+        name: req.body.name,
+        description: req.body.description || req.body.name,
+        price: Number(req.body.price),
+        category: req.body.category || "Main Course",
+        restaurant: req.body.restaurant,
+        image: imageUrl,
+        imagePublicId,
+      });
+    } catch (error) {
+      await deleteFromCloudinary(imagePublicId);
+      throw error;
+    }
 
     res.status(201).json(
       new ApiResponse(
@@ -129,19 +135,28 @@ export const updateFood = asyncHandler(
 
     const updateData: any = { ...req.body };
 
+    let newImagePublicId = "";
     if (req.file) {
-      if (existing?.imagePublicId) {
-        await deleteFromCloudinary(existing.imagePublicId);
-      }
       const uploadRes = await uploadToCloudinary(
         req.file.buffer,
         "foods"
       );
       updateData.image = uploadRes.secure_url;
       updateData.imagePublicId = uploadRes.public_id;
+      newImagePublicId = uploadRes.public_id;
     }
 
-    const food = await updateFoodService(id, updateData);
+    let food;
+    try {
+      food = await updateFoodService(id, updateData);
+    } catch (error) {
+      await deleteFromCloudinary(newImagePublicId);
+      throw error;
+    }
+
+    if (newImagePublicId && existing?.imagePublicId) {
+      await deleteFromCloudinary(existing.imagePublicId);
+    }
 
     res.status(200).json(
       new ApiResponse(
@@ -163,9 +178,6 @@ export const updateFoodImage = asyncHandler(
     let imagePublicId = existing?.imagePublicId || "";
 
     if (req.file) {
-      if (existing?.imagePublicId) {
-        await deleteFromCloudinary(existing.imagePublicId);
-      }
       const uploadRes = await uploadToCloudinary(
         req.file.buffer,
         "foods"
@@ -174,10 +186,26 @@ export const updateFoodImage = asyncHandler(
       imagePublicId = uploadRes.public_id;
     }
 
-    const food = await updateFoodService(id, {
-      image: imageUrl,
-      imagePublicId,
-    });
+    let food;
+    try {
+      food = await updateFoodService(id, {
+        image: imageUrl,
+        imagePublicId,
+      });
+    } catch (error) {
+      if (imagePublicId !== existing?.imagePublicId) {
+        await deleteFromCloudinary(imagePublicId);
+      }
+      throw error;
+    }
+
+    if (
+      imagePublicId &&
+      existing?.imagePublicId &&
+      imagePublicId !== existing.imagePublicId
+    ) {
+      await deleteFromCloudinary(existing.imagePublicId);
+    }
 
     res.status(200).json(
       new ApiResponse(

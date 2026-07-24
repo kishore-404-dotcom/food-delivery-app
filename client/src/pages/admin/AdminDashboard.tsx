@@ -15,6 +15,7 @@ import {
   FaImage,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 import type { IOrder, ICoupon, IPayment, IReview, IRestaurant, IFood, IUser } from "../../types/food";
 import { getAllOrders, updateOrderStatus } from "../../services/orderService";
@@ -34,6 +35,20 @@ import {
   deleteFood,
 } from "../../services/foodService";
 import { getDashboardOverview, type DashboardOverview } from "../../services/adminService";
+
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const DEFAULT_RESTAURANT_IMAGE =
+  "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80";
+const DEFAULT_FOOD_IMAGE =
+  "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=200&q=80";
+
+const getUploadErrorMessage = (error: unknown) => {
+  if (axios.isAxiosError<{ message?: string }>(error)) {
+    return error.response?.data?.message || error.message;
+  }
+  return error instanceof Error ? error.message : "Image upload failed. Please try again.";
+};
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<
@@ -60,6 +75,7 @@ export function AdminDashboard() {
   const [restAddress, setRestAddress] = useState("");
   const [restImageFile, setRestImageFile] = useState<File | null>(null);
   const [restImagePreview, setRestImagePreview] = useState<string>("");
+  const [restUploadError, setRestUploadError] = useState("");
 
   // Food Modal & Form State
   const [isFoodModalOpen, setIsFoodModalOpen] = useState(false);
@@ -71,6 +87,7 @@ export function AdminDashboard() {
   const [foodRestId, setFoodRestId] = useState("");
   const [foodImageFile, setFoodImageFile] = useState<File | null>(null);
   const [foodImagePreview, setFoodImagePreview] = useState<string>("");
+  const [foodUploadError, setFoodUploadError] = useState("");
 
   // Coupon Form State
   const [newCouponCode, setNewCouponCode] = useState("");
@@ -122,17 +139,14 @@ export function AdminDashboard() {
   }, [fetchAdminData]);
 
   // File Validation Helper
-  const validateImageFile = (file: File): boolean => {
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
-    if (!allowedTypes.includes(file.type.toLowerCase())) {
-      toast.error("Invalid file format. Only JPG, PNG, and WEBP are supported.");
-      return false;
+  const validateImageFile = (file: File): string => {
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type.toLowerCase())) {
+      return "Invalid file format. Only JPG, PNG, and WEBP are supported.";
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("File size exceeds 5MB limit. Please choose a smaller image.");
-      return false;
+    if (file.size > MAX_IMAGE_SIZE) {
+      return "File size exceeds the 5 MB limit. Please choose a smaller image.";
     }
-    return true;
+    return "";
   };
 
   // RESTAURANT CRUD
@@ -145,10 +159,14 @@ export function AdminDashboard() {
 
     try {
       setUploading(true);
+      setRestUploadError("");
       const formData = new FormData();
       formData.append("name", restName.trim());
+      formData.append("description", restName.trim());
       formData.append("address", restAddress.trim());
       formData.append("category", restCategory);
+      formData.append("deliveryTime", String(editingRest?.deliveryTime || 30));
+      formData.append("deliveryFee", String(editingRest?.deliveryFee || 0));
 
       if (restImageFile) {
         formData.append("image", restImageFile);
@@ -171,7 +189,9 @@ export function AdminDashboard() {
       fetchAdminData();
     } catch (err: unknown) {
       console.error("Error saving restaurant:", err);
-      toast.error("Failed to save restaurant to Cloudinary/MongoDB");
+      const message = getUploadErrorMessage(err);
+      setRestUploadError(message);
+      toast.error(message);
     } finally {
       setUploading(false);
     }
@@ -199,9 +219,10 @@ export function AdminDashboard() {
 
     try {
       setUploading(true);
+      setFoodUploadError("");
       const formData = new FormData();
       formData.append("name", foodName.trim());
-      formData.append("description", foodDesc.trim());
+      formData.append("description", foodDesc.trim() || foodName.trim());
       formData.append("price", String(foodPrice));
       formData.append("category", foodCategory);
       formData.append("restaurant", foodRestId);
@@ -228,7 +249,9 @@ export function AdminDashboard() {
       fetchAdminData();
     } catch (err: unknown) {
       console.error("Error saving food:", err);
-      toast.error("Failed to save food dish to Cloudinary/MongoDB");
+      const message = getUploadErrorMessage(err);
+      setFoodUploadError(message);
+      toast.error(message);
     } finally {
       setUploading(false);
     }
@@ -415,6 +438,7 @@ export function AdminDashboard() {
                   setRestAddress("");
                   setRestImageFile(null);
                   setRestImagePreview("");
+                  setRestUploadError("");
                   setIsRestModalOpen(true);
                 }}
                 className="flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-xs font-bold text-white shadow hover:bg-orange-600"
@@ -428,7 +452,11 @@ export function AdminDashboard() {
                 <div key={r._id} className="rounded-2xl border p-4 bg-gray-50 flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <img
-                      src={r.image || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80"}
+                      src={r.image || DEFAULT_RESTAURANT_IMAGE}
+                      onError={(event) => {
+                        event.currentTarget.onerror = null;
+                        event.currentTarget.src = DEFAULT_RESTAURANT_IMAGE;
+                      }}
                       alt={r.name}
                       className="h-14 w-14 rounded-xl object-cover border"
                       loading="lazy"
@@ -450,6 +478,7 @@ export function AdminDashboard() {
                         setRestAddress(r.address);
                         setRestImagePreview(r.image || "");
                         setRestImageFile(null);
+                        setRestUploadError("");
                         setIsRestModalOpen(true);
                       }}
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
@@ -484,6 +513,7 @@ export function AdminDashboard() {
                   setFoodRestId(restaurants[0]?._id || "");
                   setFoodImageFile(null);
                   setFoodImagePreview("");
+                  setFoodUploadError("");
                   setIsFoodModalOpen(true);
                 }}
                 className="flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-xs font-bold text-white shadow hover:bg-orange-600"
@@ -497,7 +527,11 @@ export function AdminDashboard() {
                 <div key={f._id} className="rounded-2xl border p-4 bg-gray-50 flex items-start justify-between text-xs gap-3">
                   <div className="flex items-center gap-3">
                     <img
-                      src={f.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=200&q=80"}
+                      src={f.image || DEFAULT_FOOD_IMAGE}
+                      onError={(event) => {
+                        event.currentTarget.onerror = null;
+                        event.currentTarget.src = DEFAULT_FOOD_IMAGE;
+                      }}
                       alt={f.name}
                       className="h-14 w-14 rounded-xl object-cover border"
                       loading="lazy"
@@ -530,6 +564,7 @@ export function AdminDashboard() {
                         );
                         setFoodImagePreview(f.image || "");
                         setFoodImageFile(null);
+                        setFoodUploadError("");
                         setIsFoodModalOpen(true);
                       }}
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
@@ -689,24 +724,53 @@ export function AdminDashboard() {
                 accept="image/jpeg,image/png,image/webp"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file && validateImageFile(file)) {
-                    setRestImageFile(file);
-                    setRestImagePreview(URL.createObjectURL(file));
+                  if (!file) return;
+                  const validationError = validateImageFile(file);
+                  if (validationError) {
+                    setRestUploadError(validationError);
+                    toast.error(validationError);
+                    e.target.value = "";
+                    return;
                   }
+                  if (restImagePreview.startsWith("blob:")) {
+                    URL.revokeObjectURL(restImagePreview);
+                  }
+                  setRestUploadError("");
+                  setRestImageFile(file);
+                  setRestImagePreview(URL.createObjectURL(file));
                 }}
+                disabled={uploading}
                 className="w-full rounded-xl border p-2"
               />
               <p className="text-[10px] text-gray-400 mt-1">Accepted: JPG, PNG, WEBP (Max 5MB)</p>
+              {editingRest && !restImageFile && (
+                <p className="mt-1 text-[10px] text-gray-500">
+                  Leave this empty to keep the existing image.
+                </p>
+              )}
+              {restUploadError && (
+                <p role="alert" className="mt-2 rounded-lg bg-red-50 p-2 text-xs font-medium text-red-700">
+                  {restUploadError}
+                </p>
+              )}
 
               {restImagePreview && (
                 <div className="mt-2 text-center">
-                  <img src={restImagePreview} alt="Preview" className="h-24 w-full object-cover rounded-xl border" />
+                  <img
+                    src={restImagePreview}
+                    alt="Restaurant image preview"
+                    onError={(event) => {
+                      event.currentTarget.onerror = null;
+                      event.currentTarget.src = DEFAULT_RESTAURANT_IMAGE;
+                    }}
+                    className="h-24 w-full object-cover rounded-xl border"
+                  />
                 </div>
               )}
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
-              <button type="button" onClick={() => setIsRestModalOpen(false)} className="px-4 py-2 border rounded-xl font-bold">Cancel</button>
+              <button type="button" disabled={uploading} onClick={() => setIsRestModalOpen(false)} className="px-4 py-2 border rounded-xl font-bold">Cancel</button>
               <button type="submit" disabled={uploading} className="px-5 py-2 bg-orange-500 text-white font-bold rounded-xl">
                 {uploading ? "Uploading to Cloudinary..." : "Save Restaurant"}
               </button>
@@ -738,24 +802,53 @@ export function AdminDashboard() {
                 accept="image/jpeg,image/png,image/webp"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file && validateImageFile(file)) {
-                    setFoodImageFile(file);
-                    setFoodImagePreview(URL.createObjectURL(file));
+                  if (!file) return;
+                  const validationError = validateImageFile(file);
+                  if (validationError) {
+                    setFoodUploadError(validationError);
+                    toast.error(validationError);
+                    e.target.value = "";
+                    return;
                   }
+                  if (foodImagePreview.startsWith("blob:")) {
+                    URL.revokeObjectURL(foodImagePreview);
+                  }
+                  setFoodUploadError("");
+                  setFoodImageFile(file);
+                  setFoodImagePreview(URL.createObjectURL(file));
                 }}
+                disabled={uploading}
                 className="w-full rounded-xl border p-2"
               />
               <p className="text-[10px] text-gray-400 mt-1">Accepted: JPG, PNG, WEBP (Max 5MB)</p>
+              {editingFood && !foodImageFile && (
+                <p className="mt-1 text-[10px] text-gray-500">
+                  Leave this empty to keep the existing image.
+                </p>
+              )}
+              {foodUploadError && (
+                <p role="alert" className="mt-2 rounded-lg bg-red-50 p-2 text-xs font-medium text-red-700">
+                  {foodUploadError}
+                </p>
+              )}
 
               {foodImagePreview && (
                 <div className="mt-2 text-center">
-                  <img src={foodImagePreview} alt="Preview" className="h-24 w-full object-cover rounded-xl border" />
+                  <img
+                    src={foodImagePreview}
+                    alt="Food image preview"
+                    onError={(event) => {
+                      event.currentTarget.onerror = null;
+                      event.currentTarget.src = DEFAULT_FOOD_IMAGE;
+                    }}
+                    className="h-24 w-full object-cover rounded-xl border"
+                  />
                 </div>
               )}
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
-              <button type="button" onClick={() => setIsFoodModalOpen(false)} className="px-4 py-2 border rounded-xl font-bold">Cancel</button>
+              <button type="button" disabled={uploading} onClick={() => setIsFoodModalOpen(false)} className="px-4 py-2 border rounded-xl font-bold">Cancel</button>
               <button type="submit" disabled={uploading} className="px-5 py-2 bg-orange-500 text-white font-bold rounded-xl">
                 {uploading ? "Uploading to Cloudinary..." : "Save Food Dish"}
               </button>

@@ -1,18 +1,25 @@
 import multer from "multer";
 import { ApiError } from "../utils/apiError";
 
-// Store files in memory buffer
 const storage = multer.memoryStorage();
 
-// Accept only image/jpeg, image/png, image/webp
-const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+export const ALLOWED_IMAGE_MIME_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
+export const MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024;
 
 const fileFilter = (
   _req: Express.Request,
   file: Express.Multer.File,
   cb: multer.FileFilterCallback
 ) => {
-  if (allowedMimeTypes.includes(file.mimetype.toLowerCase())) {
+  if (
+    ALLOWED_IMAGE_MIME_TYPES.includes(
+      file.mimetype.toLowerCase() as (typeof ALLOWED_IMAGE_MIME_TYPES)[number]
+    )
+  ) {
     cb(null, true);
   } else {
     cb(
@@ -28,7 +35,7 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5 MB maximum file size limit
+    fileSize: MAX_IMAGE_FILE_SIZE,
   },
 });
 

@@ -22,17 +22,24 @@ exports.createRestaurant = (0, asyncHandler_1.default)(async (req, res) => {
     else if (req.body.image) {
         imageUrl = req.body.image;
     }
-    const restaurant = await (0, restaurantService_1.createRestaurantService)({
-        name: req.body.name,
-        description: req.body.description || req.body.name,
-        address: req.body.address,
-        category: req.body.category || "General",
-        deliveryTime: req.body.deliveryTime ? Number(req.body.deliveryTime) : 30,
-        deliveryFee: req.body.deliveryFee ? Number(req.body.deliveryFee) : 0,
-        image: imageUrl,
-        imagePublicId,
-        owner: req.user.id,
-    });
+    let restaurant;
+    try {
+        restaurant = await (0, restaurantService_1.createRestaurantService)({
+            name: req.body.name,
+            description: req.body.description || req.body.name,
+            address: req.body.address,
+            category: req.body.category || "General",
+            deliveryTime: req.body.deliveryTime ? Number(req.body.deliveryTime) : 30,
+            deliveryFee: req.body.deliveryFee ? Number(req.body.deliveryFee) : 0,
+            image: imageUrl,
+            imagePublicId,
+            owner: req.user.id,
+        });
+    }
+    catch (error) {
+        await (0, uploadToCloudinary_1.deleteFromCloudinary)(imagePublicId);
+        throw error;
+    }
     res.status(201).json(new apiResponse_1.ApiResponse(true, "Restaurant created successfully", restaurant));
 });
 // Get all restaurants
@@ -63,16 +70,24 @@ exports.updateRestaurant = (0, asyncHandler_1.default)(async (req, res) => {
     const { id } = req.params;
     const existing = await restaurant_1.default.findById(id);
     const updateData = { ...req.body };
-    // Upload new image if present
+    let newImagePublicId = "";
     if (req.file) {
-        if (existing?.imagePublicId) {
-            await (0, uploadToCloudinary_1.deleteFromCloudinary)(existing.imagePublicId);
-        }
         const uploadRes = await (0, uploadToCloudinary_1.uploadToCloudinary)(req.file.buffer, "restaurants");
         updateData.image = uploadRes.secure_url;
         updateData.imagePublicId = uploadRes.public_id;
+        newImagePublicId = uploadRes.public_id;
     }
-    const restaurant = await (0, restaurantService_1.updateRestaurantService)(id, updateData);
+    let restaurant;
+    try {
+        restaurant = await (0, restaurantService_1.updateRestaurantService)(id, updateData);
+    }
+    catch (error) {
+        await (0, uploadToCloudinary_1.deleteFromCloudinary)(newImagePublicId);
+        throw error;
+    }
+    if (newImagePublicId && existing?.imagePublicId) {
+        await (0, uploadToCloudinary_1.deleteFromCloudinary)(existing.imagePublicId);
+    }
     res.status(200).json(new apiResponse_1.ApiResponse(true, "Restaurant updated successfully", restaurant));
 });
 // Update restaurant image
@@ -82,17 +97,28 @@ exports.updateRestaurantImage = (0, asyncHandler_1.default)(async (req, res) => 
     let imageUrl = existing?.image || "";
     let imagePublicId = existing?.imagePublicId || "";
     if (req.file) {
-        if (existing?.imagePublicId) {
-            await (0, uploadToCloudinary_1.deleteFromCloudinary)(existing.imagePublicId);
-        }
         const uploadRes = await (0, uploadToCloudinary_1.uploadToCloudinary)(req.file.buffer, "restaurants");
         imageUrl = uploadRes.secure_url;
         imagePublicId = uploadRes.public_id;
     }
-    const restaurant = await (0, restaurantService_1.updateRestaurantService)(id, {
-        image: imageUrl,
-        imagePublicId,
-    });
+    let restaurant;
+    try {
+        restaurant = await (0, restaurantService_1.updateRestaurantService)(id, {
+            image: imageUrl,
+            imagePublicId,
+        });
+    }
+    catch (error) {
+        if (imagePublicId !== existing?.imagePublicId) {
+            await (0, uploadToCloudinary_1.deleteFromCloudinary)(imagePublicId);
+        }
+        throw error;
+    }
+    if (imagePublicId &&
+        existing?.imagePublicId &&
+        imagePublicId !== existing.imagePublicId) {
+        await (0, uploadToCloudinary_1.deleteFromCloudinary)(existing.imagePublicId);
+    }
     res.status(200).json(new apiResponse_1.ApiResponse(true, "Restaurant image updated successfully", restaurant));
 });
 // Delete restaurant

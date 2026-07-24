@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import multer from "multer";
 import { ApiError } from "../utils/apiError";
     
 // Global error handler
@@ -16,6 +17,18 @@ const errorMiddleware = (
       message: err.message,
     });
 
+  }
+
+  if (err instanceof multer.MulterError) {
+    const message =
+      err.code === "LIMIT_FILE_SIZE"
+        ? "Image exceeds the maximum file size of 5 MB."
+        : `Image upload failed: ${err.message}`;
+
+    return res.status(400).json({
+      success: false,
+      message,
+    });
   }
 
   console.error(err);

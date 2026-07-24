@@ -73,7 +73,7 @@ Add the three environment variables under **Render Dashboard -> Environment Secr
 
 ## 📌 STEP 4 — Cloudinary Deletion & Replacement Rules
 
-1. **Replacing Images:** When editing a restaurant or food dish, if a new image file is uploaded, the existing Cloudinary asset is automatically destroyed via `deleteFromCloudinary(existing.imagePublicId)` before saving the new `secure_url` and `public_id`.
+1. **Replacing Images:** When editing a restaurant or food dish, the backend uploads the replacement, saves its `secure_url` and `public_id` to MongoDB, and only then destroys the previous asset using its stored `imagePublicId`. If upload or persistence fails, the existing image is preserved.
 2. **Deleting Entities:** Deleting a restaurant or food dish automatically cleans up its associated Cloudinary image asset.
 
 ---
@@ -84,5 +84,5 @@ Add the three environment variables under **Render Dashboard -> Environment Secr
 - [x] Backend Multer memory storage configured with 5MB max size and MIME type filter (`image/jpeg`, `image/png`, `image/webp`).
 - [x] Admin endpoints protected with `protect` + `adminOnly` middlewares.
 - [x] Frontend forms send `FormData` without manual boundary headers.
-- [x] Live image previews and validation error toasts displayed to Admin.
+- [x] Live image previews, inline upload errors, loading states, and client-side type/size validation displayed to Admin.
 - [x] TypeScript build passes without compilation errors (`npm run build`).

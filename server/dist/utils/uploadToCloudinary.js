@@ -27,7 +27,9 @@ const uploadToCloudinary = (fileBuffer, subFolder = "foods") => {
     });
 };
 exports.uploadToCloudinary = uploadToCloudinary;
-// Delete image from Cloudinary by public_id
+// Deletion is only attempted with a stored Cloudinary public_id. Callers use this
+// after a successful replacement/database update so the existing image is preserved
+// if the new upload fails.
 const deleteFromCloudinary = async (publicId) => {
     if (!publicId)
         return;

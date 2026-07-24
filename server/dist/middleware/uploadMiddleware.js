@@ -3,14 +3,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.MAX_IMAGE_FILE_SIZE = exports.ALLOWED_IMAGE_MIME_TYPES = void 0;
 const multer_1 = __importDefault(require("multer"));
 const apiError_1 = require("../utils/apiError");
-// Store files in memory buffer
 const storage = multer_1.default.memoryStorage();
-// Accept only image/jpeg, image/png, image/webp
-const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+exports.ALLOWED_IMAGE_MIME_TYPES = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+];
+exports.MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024;
 const fileFilter = (_req, file, cb) => {
-    if (allowedMimeTypes.includes(file.mimetype.toLowerCase())) {
+    if (exports.ALLOWED_IMAGE_MIME_TYPES.includes(file.mimetype.toLowerCase())) {
         cb(null, true);
     }
     else {
@@ -21,7 +25,7 @@ const upload = (0, multer_1.default)({
     storage,
     fileFilter,
     limits: {
-        fileSize: 5 * 1024 * 1024, // 5 MB maximum file size limit
+        fileSize: exports.MAX_IMAGE_FILE_SIZE,
     },
 });
 exports.default = upload;

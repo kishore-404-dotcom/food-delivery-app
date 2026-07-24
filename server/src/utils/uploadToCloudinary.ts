@@ -8,10 +8,12 @@ export interface CloudinaryUploadResult {
   public_id: string;
 }
 
+export type CloudinaryImageFolder = "restaurants" | "foods" | "users";
+
 // Upload image stream to Cloudinary with folder hierarchy & auto-optimization
 export const uploadToCloudinary = (
   fileBuffer: Buffer,
-  subFolder: "restaurants" | "foods" | "users" = "foods"
+  subFolder: CloudinaryImageFolder = "foods"
 ): Promise<CloudinaryUploadResult> => {
   const folder = `food-delivery/${subFolder}`;
 
@@ -38,7 +40,9 @@ export const uploadToCloudinary = (
   });
 };
 
-// Delete image from Cloudinary by public_id
+// Deletion is only attempted with a stored Cloudinary public_id. Callers use this
+// after a successful replacement/database update so the existing image is preserved
+// if the new upload fails.
 export const deleteFromCloudinary = async (publicId?: string): Promise<void> => {
   if (!publicId) return;
   try {
