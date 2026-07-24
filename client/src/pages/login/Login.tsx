@@ -13,13 +13,7 @@ type LoginForm = {
   password: string;
 };
 
-type User = {
-  _id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  role: string;
-};
+import type { IUser } from "../../types/food";
 
 type LoginResponse = {
   success?: boolean;
@@ -27,17 +21,22 @@ type LoginResponse = {
 
   // Possible response format 1
   token?: string;
-  user?: User;
+  user?: IUser;
 
   // Possible response format 2
   data?: {
     token?: string;
-    user?: User;
+    user?: IUser;
   };
 };
 
+import { useAuth } from "../../hooks/useAuth";
+import { useLocation } from "react-router-dom";
+
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login: authLogin } = useAuth();
 
   const {
     register,
@@ -61,9 +60,6 @@ function Login() {
 
       console.log("Login response:", response.data);
 
-      // Supports either:
-      // response.data.token
-      // response.data.data.token
       const token =
         response.data.token ??
         response.data.data?.token;
@@ -72,30 +68,27 @@ function Login() {
         response.data.user ??
         response.data.data?.user;
 
-      if (!token) {
+      if (!token || !user) {
         console.error(
-          "Login succeeded but no token was returned:",
+          "Login succeeded but incomplete data was returned:",
           response.data
         );
 
         toast.error(
-          "Login succeeded, but no token was returned by the server"
+          "Login succeeded, but user data was missing from server"
         );
 
         return;
       }
 
-      localStorage.setItem("token", token);
-
-      if (user) {
-        localStorage.setItem("user", JSON.stringify(user));
-      }
+      authLogin(token, user);
 
       toast.success(
         response.data.message || "Login successful!"
       );
 
-      navigate("/");
+      const fromPath = (location.state as { from?: { pathname?: string } })?.from?.pathname || "/";
+      navigate(fromPath, { replace: true });
     } catch (error: unknown) {
       console.error("Login error:", error);
 
