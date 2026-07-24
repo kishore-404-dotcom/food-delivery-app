@@ -18,8 +18,8 @@ router.get("/my-payments", authMiddleware_1.protect, paymentController_1.getMyPa
 router.get("/", authMiddleware_1.protect, authMiddleware_1.adminOnly, paymentValidator_1.paymentQueryValidator, validateRequest_1.default, paymentController_1.getAllPayments);
 // Get Payment By ID
 router.get("/:id", authMiddleware_1.protect, paymentValidator_1.paymentIdValidator, validateRequest_1.default, paymentController_1.getPaymentById);
-// Dummy Success
-router.put("/success/:id", authMiddleware_1.protect, rateLimiter_1.paymentLimiter, paymentValidator_1.paymentIdValidator, validateRequest_1.default, paymentController_1.paymentSuccess);
-// Dummy Failed
-router.put("/failed/:id", authMiddleware_1.protect, rateLimiter_1.paymentLimiter, paymentValidator_1.paymentIdValidator, validateRequest_1.default, paymentController_1.paymentFailed);
+// Verify a Razorpay payment signature
+router.post("/verify", authMiddleware_1.protect, rateLimiter_1.paymentLimiter, paymentValidator_1.paymentVerificationValidator, validateRequest_1.default, paymentController_1.verifyPayment);
+// Record a failed or abandoned Razorpay checkout
+router.post("/failure", authMiddleware_1.protect, rateLimiter_1.paymentLimiter, paymentValidator_1.paymentFailureValidator, validateRequest_1.default, paymentController_1.paymentFailed);
 exports.default = router;

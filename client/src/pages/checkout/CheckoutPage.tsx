@@ -20,9 +20,16 @@ import {
 import type { CreateAddressInput } from "../../services/addressService";
 import { placeOrder } from "../../services/orderService";
 
-import PaymentModal from "../../components/payments/PaymentModal";
-import { createPayment } from "../../services/paymentService";
-import type { IPayment } from "../../types/food";
+import {
+  createPayment,
+  reportPaymentFailure,
+  verifyPayment,
+  type VerifyRazorpayPaymentInput,
+} from "../../services/paymentService";
+import {
+  loadRazorpayCheckout,
+  openRazorpayCheckout,
+} from "../../services/razorpay";
 
 function CheckoutPage() {
   const { cart, cartTotal, refreshCart } = useCart();
@@ -39,9 +46,11 @@ function CheckoutPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [savingAddress, setSavingAddress] = useState(false);
 
-  // Payment Modal State
-  const [activePayment, setActivePayment] = useState<IPayment | null>(null);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
+  const [retryOrderId, setRetryOrderId] = useState<string | null>(null);
+  const [pendingVerification, setPendingVerification] =
+    useState<VerifyRazorpayPaymentInput | null>(null);
 
   const fetchAddresses = useCallback(async () => {
     try {
@@ -90,6 +99,100 @@ function CheckoutPage() {
   const taxes = Math.round(cartTotal * 0.05);
   const finalTotal = cartTotal + deliveryFee + taxes;
 
+  const completeVerification = async (input: VerifyRazorpayPaymentInput) => {
+    try {
+      setPaymentProcessing(true);
+      setPaymentError("");
+      await verifyPayment(input);
+      setPendingVerification(null);
+      await refreshCart();
+      toast.success("Payment verified successfully!");
+      navigate("/orders", { replace: true });
+    } catch (error) {
+      console.error("Payment verification failed:", error);
+      setPendingVerification(input);
+      setPaymentError(
+        "Payment could not be verified. If money was deducted, restore your connection and retry verification."
+      );
+    } finally {
+      setPaymentProcessing(false);
+    }
+  };
+
+  const startRazorpayPayment = async (orderId: string) => {
+    try {
+      setPaymentProcessing(true);
+      setPaymentError("");
+      setPendingVerification(null);
+
+      const checkoutData = await createPayment(orderId);
+      await loadRazorpayCheckout();
+
+      let failureHandled = false;
+      const recordFailure = async (reason: string, abandoned: boolean) => {
+        if (failureHandled) return;
+        failureHandled = true;
+        try {
+          await reportPaymentFailure(
+            checkoutData.razorpayOrderId,
+            reason,
+            abandoned
+          );
+        } catch (error) {
+          console.error("Unable to record payment failure:", error);
+        }
+        setRetryOrderId(orderId);
+        setPaymentError(
+          abandoned
+            ? "Razorpay Checkout was closed. You can retry this order without creating another one."
+            : reason
+        );
+        setPaymentProcessing(false);
+      };
+
+      openRazorpayCheckout(
+        {
+          key: checkoutData.keyId,
+          amount: checkoutData.amount,
+          currency: checkoutData.currency,
+          order_id: checkoutData.razorpayOrderId,
+          name: "Foodie",
+          description: `Payment for order ${orderId}`,
+          prefill: checkoutData.prefill,
+          theme: { color: "#f97316" },
+          handler: async (response) => {
+            failureHandled = true;
+            await completeVerification({
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+            });
+          },
+          modal: {
+            ondismiss: async () => {
+              await recordFailure("Checkout closed by customer", true);
+            },
+          },
+        },
+        async (response) => {
+          await recordFailure(
+            response.error.description ||
+              response.error.reason ||
+              "Razorpay reported a failed payment",
+            false
+          );
+        }
+      );
+    } catch (error) {
+      console.error("Unable to start Razorpay Checkout:", error);
+      setRetryOrderId(orderId);
+      setPaymentError(
+        "Unable to start secure checkout. Check your connection and retry this order."
+      );
+      setPaymentProcessing(false);
+    }
+  };
+
   const handlePlaceOrder = async () => {
     if (!selectedAddressId) {
       toast.error("Please select a delivery address");
@@ -109,9 +212,8 @@ function CheckoutPage() {
       });
 
       if (paymentMethod === "ONLINE") {
-        const paymentData = await createPayment(order._id);
-        setActivePayment(paymentData);
-        setIsPaymentModalOpen(true);
+        setRetryOrderId(order._id);
+        await startRazorpayPayment(order._id);
       } else {
         await refreshCart();
         toast.success(`Order #${order._id.substring(order._id.length - 6).toUpperCase()} placed successfully! 🎉`);
@@ -123,17 +225,6 @@ function CheckoutPage() {
     } finally {
       setPlacingOrder(false);
     }
-  };
-
-  const handlePaymentSuccess = async () => {
-    setIsPaymentModalOpen(false);
-    await refreshCart();
-    navigate("/orders", { replace: true });
-  };
-
-  const handlePaymentFailure = () => {
-    setIsPaymentModalOpen(false);
-    navigate("/orders", { replace: true });
   };
 
   if (validItems.length === 0) {
@@ -343,15 +434,48 @@ function CheckoutPage() {
             {/* Submit Button */}
             <button
               onClick={handlePlaceOrder}
-              disabled={placingOrder || !selectedAddressId}
+              disabled={placingOrder || paymentProcessing || !selectedAddressId}
               className={`mt-6 flex w-full items-center justify-center gap-2 rounded-2xl py-4 font-bold text-white shadow-md transition ${
-                placingOrder || !selectedAddressId
+                placingOrder || paymentProcessing || !selectedAddressId
                   ? "bg-gray-300 cursor-not-allowed"
                   : "bg-orange-500 hover:bg-orange-600 active:scale-95"
               }`}
             >
-              {placingOrder ? "Placing Order..." : `Place Order (₹${finalTotal})`}
+              {placingOrder || paymentProcessing
+                ? "Processing..."
+                : `Place Order (₹${finalTotal})`}
             </button>
+
+            {paymentError && (
+              <div
+                role="alert"
+                className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-xs text-red-700"
+              >
+                <p className="font-semibold">{paymentError}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {pendingVerification && (
+                    <button
+                      type="button"
+                      disabled={paymentProcessing}
+                      onClick={() => void completeVerification(pendingVerification)}
+                      className="rounded-xl bg-orange-500 px-3 py-2 font-bold text-white disabled:bg-gray-300"
+                    >
+                      Retry Verification
+                    </button>
+                  )}
+                  {!pendingVerification && retryOrderId && (
+                    <button
+                      type="button"
+                      disabled={paymentProcessing}
+                      onClick={() => void startRazorpayPayment(retryOrderId)}
+                      className="rounded-xl bg-orange-500 px-3 py-2 font-bold text-white disabled:bg-gray-300"
+                    >
+                      Retry Razorpay
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -364,14 +488,6 @@ function CheckoutPage() {
         loading={savingAddress}
       />
 
-      {/* Payment Gateway Simulator Modal */}
-      <PaymentModal
-        isOpen={isPaymentModalOpen}
-        payment={activePayment}
-        onClose={() => setIsPaymentModalOpen(false)}
-        onSuccess={handlePaymentSuccess}
-        onFailure={handlePaymentFailure}
-      />
     </div>
   );
 }

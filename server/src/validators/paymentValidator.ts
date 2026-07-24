@@ -15,6 +15,36 @@ export const paymentIdValidator = [
     .withMessage("Invalid Payment ID"),
 ];
 
+export const paymentVerificationValidator = [
+  body("razorpayOrderId")
+    .isString()
+    .matches(/^order_[A-Za-z0-9]+$/)
+    .withMessage("Invalid Razorpay order ID"),
+  body("razorpayPaymentId")
+    .isString()
+    .matches(/^pay_[A-Za-z0-9]+$/)
+    .withMessage("Invalid Razorpay payment ID"),
+  body("razorpaySignature")
+    .isString()
+    .matches(/^[a-f0-9]{64}$/i)
+    .withMessage("Invalid Razorpay signature"),
+];
+
+export const paymentFailureValidator = [
+  body("razorpayOrderId")
+    .isString()
+    .matches(/^order_[A-Za-z0-9]+$/)
+    .withMessage("Invalid Razorpay order ID"),
+  body("reason")
+    .trim()
+    .isLength({ min: 1, max: 500 })
+    .withMessage("Failure reason is required"),
+  body("abandoned")
+    .optional()
+    .isBoolean()
+    .withMessage("Abandoned must be a boolean"),
+];
+
 export const paymentQueryValidator = [
   query("page")
     .optional()
@@ -44,6 +74,7 @@ export const paymentQueryValidator = [
       "PENDING",
       "SUCCESS",
       "FAILED",
+      "ABANDONED",
     ])
     .withMessage("Invalid payment status"),
 

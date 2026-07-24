@@ -50,21 +50,42 @@ const paymentSchema = new mongoose_1.Schema({
         required: true,
         min: 0,
     },
+    currency: {
+        type: String,
+        default: "INR",
+        enum: ["INR"],
+    },
     paymentId: {
         type: String,
-        required: true,
+        sparse: true,
+    },
+    razorpayOrderId: {
+        type: String,
         unique: true,
+        sparse: true,
         index: true,
+    },
+    razorpayPaymentId: {
+        type: String,
+        sparse: true,
+        unique: true,
     },
     paymentMethod: {
         type: String,
         enum: ["DUMMY", "RAZORPAY"],
-        default: "DUMMY",
+        default: "RAZORPAY",
     },
     status: {
         type: String,
-        enum: ["PENDING", "SUCCESS", "FAILED"],
+        enum: ["PENDING", "SUCCESS", "FAILED", "ABANDONED"],
         default: "PENDING",
+    },
+    failureReason: {
+        type: String,
+        maxlength: 500,
+    },
+    verifiedAt: {
+        type: Date,
     },
 }, {
     timestamps: true,

@@ -54,7 +54,9 @@ function PaymentCard({ payment }: { payment: IPayment }) {
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-gray-400">Payment ID:</span>
-            <span className="font-extrabold text-gray-900">{payment.paymentId}</span>
+            <span className="font-extrabold text-gray-900">
+              {payment.razorpayPaymentId || payment.razorpayOrderId || payment.paymentId}
+            </span>
           </div>
           <p className="mt-1 flex items-center gap-1.5 text-xs text-gray-500">
             <FaCalendarAlt className="text-orange-400" /> {formattedDate}

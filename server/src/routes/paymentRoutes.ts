@@ -4,7 +4,7 @@ import {
   createPayment,
   getMyPayments,
   getPaymentById,
-  paymentSuccess,
+  verifyPayment,
   paymentFailed,
   getAllPayments,
 } from "../controllers/paymentController";
@@ -19,6 +19,8 @@ import validateRequest from "../middleware/validateRequest";
 import {
   paymentValidator,
   paymentIdValidator,
+  paymentVerificationValidator,
+  paymentFailureValidator,
   paymentQueryValidator,
 } from "../validators/paymentValidator";
 
@@ -64,24 +66,24 @@ router.get(
   getPaymentById
 );
 
-// Dummy Success
-router.put(
-  "/success/:id",
+// Verify a Razorpay payment signature
+router.post(
+  "/verify",
   protect,
   paymentLimiter,
-  paymentIdValidator,
+  paymentVerificationValidator,
   validateRequest,
-  paymentSuccess
+  verifyPayment
 );
 
-// Dummy Failed
-router.put(
-  "/failed/:id",
+// Record a failed or abandoned Razorpay checkout
+router.post(
+  "/failure",
   protect,
   paymentLimiter,
-  paymentIdValidator,
+  paymentFailureValidator,
   validateRequest,
   paymentFailed
 );
 
-export default router;  
+export default router;

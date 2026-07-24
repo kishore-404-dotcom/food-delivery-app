@@ -9,7 +9,7 @@ import {
   createPaymentService,
   getMyPaymentsService,
   getPaymentByIdService,
-  paymentSuccessService,
+  verifyPaymentService,
   paymentFailedService,
   getAllPaymentsService,
 } from "../services/paymentService";
@@ -75,19 +75,19 @@ export const getPaymentById = asyncHandler(
   }
 );
 
-// Payment Success
-export const paymentSuccess = asyncHandler(
+// Verify Razorpay signature before marking the payment successful
+export const verifyPayment = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-    const { id } = req.params as {
-      id: string;
-    };
-
-    const payment = await paymentSuccessService(id);
+    const payment = await verifyPaymentService(req.user!.id, {
+      razorpayOrderId: req.body.razorpayOrderId,
+      razorpayPaymentId: req.body.razorpayPaymentId,
+      razorpaySignature: req.body.razorpaySignature,
+    });
 
     res.status(200).json(
       new ApiResponse(
         true,
-        "Payment completed successfully",
+        "Payment verified successfully",
         payment
       )
     );
@@ -97,16 +97,17 @@ export const paymentSuccess = asyncHandler(
 // Payment Failed
 export const paymentFailed = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-    const { id } = req.params as {
-      id: string;
-    };
-
-    const payment = await paymentFailedService(id);
+    const payment = await paymentFailedService(
+      req.user!.id,
+      req.body.razorpayOrderId,
+      req.body.reason,
+      req.body.abandoned === true
+    );
 
     res.status(200).json(
       new ApiResponse(
         true,
-        "Payment marked as failed",
+        req.body.abandoned ? "Payment marked as abandoned" : "Payment marked as failed",
         payment
       )
     );

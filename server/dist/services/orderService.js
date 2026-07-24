@@ -9,6 +9,7 @@ const cart_1 = __importDefault(require("../models/cart"));
 const order_1 = __importDefault(require("../models/order"));
 const address_1 = __importDefault(require("../models/address"));
 const apiError_1 = require("../utils/apiError");
+const orderTotal_1 = require("../utils/orderTotal");
 // Place Order
 const placeOrderService = async (userId, paymentMethod, deliveryAddress) => {
     const session = await mongoose_1.default.startSession();
@@ -31,10 +32,10 @@ const placeOrderService = async (userId, paymentMethod, deliveryAddress) => {
         if (!cart || cart.items.length === 0) {
             throw new apiError_1.ApiError(400, "Cart is empty");
         }
-        let totalAmount = 0;
+        let subtotal = 0;
         const orderItems = cart.items.map((item) => {
             const price = item.food.price;
-            totalAmount +=
+            subtotal +=
                 price * item.quantity;
             return {
                 food: item.food._id,
@@ -43,6 +44,7 @@ const placeOrderService = async (userId, paymentMethod, deliveryAddress) => {
                 quantity: item.quantity,
             };
         });
+        const { totalAmount } = (0, orderTotal_1.calculateOrderTotal)(subtotal);
         const order = await order_1.default.create([
             {
                 user: userId,

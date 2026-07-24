@@ -5,6 +5,7 @@ import Order from "../models/order";
 import Address from "../models/address";
 
 import { ApiError } from "../utils/apiError";
+import { calculateOrderTotal } from "../utils/orderTotal";
 
 // Place Order
 export const placeOrderService = async (
@@ -52,14 +53,14 @@ export const placeOrderService = async (
       );
     }
 
-    let totalAmount = 0;
+    let subtotal = 0;
 
     const orderItems = cart.items.map(
       (item: any) => {
 
         const price = item.food.price;
 
-        totalAmount +=
+        subtotal +=
           price * item.quantity;
 
         return {
@@ -71,6 +72,8 @@ export const placeOrderService = async (
 
       }
     );
+
+    const { totalAmount } = calculateOrderTotal(subtotal);
 
     const order = await Order.create(
       [

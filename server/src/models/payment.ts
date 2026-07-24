@@ -4,9 +4,14 @@ export interface IPayment extends Document {
   user: mongoose.Types.ObjectId;
   order: mongoose.Types.ObjectId;
   amount: number;
-  paymentId: string;
+  currency: string;
+  paymentId?: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
   paymentMethod: "DUMMY" | "RAZORPAY";
-  status: "PENDING" | "SUCCESS" | "FAILED";
+  status: "PENDING" | "SUCCESS" | "FAILED" | "ABANDONED";
+  failureReason?: string;
+  verifiedAt?: Date;
 }
 
 const paymentSchema = new Schema<IPayment>(
@@ -29,23 +34,49 @@ const paymentSchema = new Schema<IPayment>(
       min: 0,
     },
 
+    currency: {
+      type: String,
+      default: "INR",
+      enum: ["INR"],
+    },
+
     paymentId: {
       type: String,
-      required: true,
+      sparse: true,
+    },
+
+    razorpayOrderId: {
+      type: String,
       unique: true,
+      sparse: true,
       index: true,
+    },
+
+    razorpayPaymentId: {
+      type: String,
+      sparse: true,
+      unique: true,
     },
 
     paymentMethod: {
       type: String,
       enum: ["DUMMY", "RAZORPAY"],
-      default: "DUMMY",
+      default: "RAZORPAY",
     },
 
     status: {
       type: String,
-      enum: ["PENDING", "SUCCESS", "FAILED"],
+      enum: ["PENDING", "SUCCESS", "FAILED", "ABANDONED"],
       default: "PENDING",
+    },
+
+    failureReason: {
+      type: String,
+      maxlength: 500,
+    },
+
+    verifiedAt: {
+      type: Date,
     },
   },
   {

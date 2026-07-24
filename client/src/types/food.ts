@@ -115,9 +115,14 @@ export interface IPayment {
   user: string | IUser;
   order: string | IOrder;
   amount: number;
-  paymentId: string;
+  currency: "INR";
+  paymentId?: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
   paymentMethod: "DUMMY" | "RAZORPAY";
-  status: "PENDING" | "SUCCESS" | "FAILED";
+  status: "PENDING" | "SUCCESS" | "FAILED" | "ABANDONED";
+  failureReason?: string;
+  verifiedAt?: string;
   createdAt?: string;
   updatedAt?: string;
 }

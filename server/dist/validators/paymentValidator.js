@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.paymentQueryValidator = exports.paymentIdValidator = exports.paymentValidator = void 0;
+exports.paymentQueryValidator = exports.paymentFailureValidator = exports.paymentVerificationValidator = exports.paymentIdValidator = exports.paymentValidator = void 0;
 const express_validator_1 = require("express-validator");
 exports.paymentValidator = [
     (0, express_validator_1.body)("orderId")
@@ -14,6 +14,34 @@ exports.paymentIdValidator = [
     (0, express_validator_1.param)("id")
         .isMongoId()
         .withMessage("Invalid Payment ID"),
+];
+exports.paymentVerificationValidator = [
+    (0, express_validator_1.body)("razorpayOrderId")
+        .isString()
+        .matches(/^order_[A-Za-z0-9]+$/)
+        .withMessage("Invalid Razorpay order ID"),
+    (0, express_validator_1.body)("razorpayPaymentId")
+        .isString()
+        .matches(/^pay_[A-Za-z0-9]+$/)
+        .withMessage("Invalid Razorpay payment ID"),
+    (0, express_validator_1.body)("razorpaySignature")
+        .isString()
+        .matches(/^[a-f0-9]{64}$/i)
+        .withMessage("Invalid Razorpay signature"),
+];
+exports.paymentFailureValidator = [
+    (0, express_validator_1.body)("razorpayOrderId")
+        .isString()
+        .matches(/^order_[A-Za-z0-9]+$/)
+        .withMessage("Invalid Razorpay order ID"),
+    (0, express_validator_1.body)("reason")
+        .trim()
+        .isLength({ min: 1, max: 500 })
+        .withMessage("Failure reason is required"),
+    (0, express_validator_1.body)("abandoned")
+        .optional()
+        .isBoolean()
+        .withMessage("Abandoned must be a boolean"),
 ];
 exports.paymentQueryValidator = [
     (0, express_validator_1.query)("page")
@@ -41,6 +69,7 @@ exports.paymentQueryValidator = [
         "PENDING",
         "SUCCESS",
         "FAILED",
+        "ABANDONED",
     ])
         .withMessage("Invalid payment status"),
     (0, express_validator_1.query)("paymentMethod")

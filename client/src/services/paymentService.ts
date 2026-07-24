@@ -1,21 +1,53 @@
 import api from "./api";
 import type { IPayment, ApiResponse } from "../types/food";
 
-export interface CreatePaymentResponse {
-  _id: string;
-  user: string;
-  order: string;
+export interface RazorpayCheckoutData {
+  keyId: string;
+  razorpayOrderId: string;
   amount: number;
-  paymentId: string;
-  paymentMethod: string;
-  status: "PENDING" | "SUCCESS" | "FAILED";
-  createdAt: string;
-  updatedAt: string;
+  currency: string;
+  prefill: {
+    name: string;
+    email: string;
+    contact: string;
+  };
 }
 
-export const createPayment = async (orderId: string): Promise<IPayment> => {
-  const response = await api.post<ApiResponse<IPayment>>("/payments/create", {
-    orderId,
+export interface VerifyRazorpayPaymentInput {
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
+}
+
+export const createPayment = async (
+  orderId: string
+): Promise<RazorpayCheckoutData> => {
+  const response = await api.post<ApiResponse<RazorpayCheckoutData>>(
+    "/payments/create",
+    { orderId }
+  );
+  return response.data.data;
+};
+
+export const verifyPayment = async (
+  data: VerifyRazorpayPaymentInput
+): Promise<IPayment> => {
+  const response = await api.post<ApiResponse<IPayment>>(
+    "/payments/verify",
+    data
+  );
+  return response.data.data;
+};
+
+export const reportPaymentFailure = async (
+  razorpayOrderId: string,
+  reason: string,
+  abandoned = false
+): Promise<IPayment> => {
+  const response = await api.post<ApiResponse<IPayment>>("/payments/failure", {
+    razorpayOrderId,
+    reason,
+    abandoned,
   });
   return response.data.data;
 };
@@ -27,16 +59,6 @@ export const getMyPayments = async (): Promise<IPayment[]> => {
 
 export const getPaymentById = async (id: string): Promise<IPayment> => {
   const response = await api.get<ApiResponse<IPayment>>(`/payments/${id}`);
-  return response.data.data;
-};
-
-export const markPaymentSuccess = async (paymentId: string): Promise<IPayment> => {
-  const response = await api.put<ApiResponse<IPayment>>(`/payments/success/${paymentId}`);
-  return response.data.data;
-};
-
-export const markPaymentFailed = async (paymentId: string): Promise<IPayment> => {
-  const response = await api.put<ApiResponse<IPayment>>(`/payments/failed/${paymentId}`);
   return response.data.data;
 };
 
