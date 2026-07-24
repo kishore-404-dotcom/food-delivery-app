@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { FaStar, FaPlus, FaUtensils } from "react-icons/fa";
+import { FaStar, FaPlus, FaUtensils, FaHeart, FaRegHeart } from "react-icons/fa";
 import type { IFood, IRestaurant } from "../../types/food";
+import { useCart } from "../../hooks/useCart";
+import { useWishlist } from "../../hooks/useWishlist";
 
 interface FoodCardProps {
   food: IFood;
@@ -11,11 +13,12 @@ interface FoodCardProps {
 const DEFAULT_FOOD_IMAGE =
   "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80";
 
-import { useCart } from "../../hooks/useCart";
-
 function FoodCard({ food, onSelect, onAddToCart }: FoodCardProps) {
   const [imgSrc, setImgSrc] = useState(food.image || DEFAULT_FOOD_IMAGE);
   const { addItem } = useCart();
+  const { isWishlisted, toggleWishlist } = useWishlist();
+
+  const wishlisted = isWishlisted(food._id);
 
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -24,6 +27,11 @@ function FoodCard({ food, onSelect, onAddToCart }: FoodCardProps) {
     } else {
       addItem(food._id, 1, food.name);
     }
+  };
+
+  const handleToggleWishlist = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleWishlist(food._id, food.name);
   };
 
   const restaurantName =
@@ -46,17 +54,21 @@ function FoodCard({ food, onSelect, onAddToCart }: FoodCardProps) {
 
         {/* Availability Badge */}
         <span
-          className={`absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-semibold text-white ${
+          className={`absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-semibold text-white shadow ${
             food.isAvailable ? "bg-green-500" : "bg-red-500"
           }`}
         >
           {food.isAvailable ? "Available" : "Sold Out"}
         </span>
 
-        {/* Category Badge */}
-        <span className="absolute right-3 top-3 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
-          {food.category}
-        </span>
+        {/* Wishlist Heart Button */}
+        <button
+          onClick={handleToggleWishlist}
+          className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 backdrop-blur-md shadow text-orange-500 transition hover:scale-110 active:scale-95"
+          title={wishlisted ? "Remove from Wishlist" : "Save to Wishlist"}
+        >
+          {wishlisted ? <FaHeart size={16} /> : <FaRegHeart size={16} className="text-gray-600" />}
+        </button>
       </div>
 
       <div className="flex flex-1 flex-col p-5">
@@ -92,7 +104,7 @@ function FoodCard({ food, onSelect, onAddToCart }: FoodCardProps) {
             disabled={!food.isAvailable}
             className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white transition ${
               food.isAvailable
-                ? "bg-orange-500 hover:bg-orange-600 active:scale-95"
+                ? "bg-orange-500 hover:bg-orange-600 active:scale-95 shadow"
                 : "bg-gray-300 cursor-not-allowed"
             }`}
           >

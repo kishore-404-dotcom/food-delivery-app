@@ -8,13 +8,16 @@ import {
   FaSignOutAlt,
   FaUserShield,
   FaClipboardList,
+  FaHeart,
 } from "react-icons/fa";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
+import { useWishlist } from "../hooks/useWishlist";
 
 function Navbar() {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const { cartCount } = useCart();
+  const { wishlistCount } = useWishlist();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const navigate = useNavigate();
@@ -114,6 +117,21 @@ function Navbar() {
                     className="flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-500"
                   >
                     <FaClipboardList className="text-gray-400" /> My Orders
+                  </Link>
+
+                  <Link
+                    to="/wishlist"
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-500"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <FaHeart className="text-gray-400" /> My Wishlist
+                    </span>
+                    {wishlistCount > 0 && (
+                      <span className="rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                        {wishlistCount}
+                      </span>
+                    )}
                   </Link>
 
                   {isAdmin && (
