@@ -11,7 +11,7 @@ const validateRequest_1 = __importDefault(require("../middleware/validateRequest
 const rateLimiter_1 = require("../middleware/rateLimiter");
 const router = express_1.default.Router();
 // Register user
-router.post("/register", authValidator_1.registerValidator, validateRequest_1.default, rateLimiter_1.authLimiter, authController_1.register);
+router.post("/register", authValidator_1.registerValidator, validateRequest_1.default, rateLimiter_1.registerLimiter, authController_1.register);
 // Login user
 router.post("/login", authValidator_1.loginValidator, validateRequest_1.default, rateLimiter_1.authLimiter, authController_1.login);
 // Get logged-in user

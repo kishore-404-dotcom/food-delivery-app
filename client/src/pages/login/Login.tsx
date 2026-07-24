@@ -6,7 +6,7 @@ import { ClipLoader } from "react-spinners";
 import { toast } from "react-toastify";
 import axios from "axios";
 
-import api from "../../services/api";
+import api, { API_BASE_URL } from "../../services/api";
 
 type LoginForm = {
   email: string;
@@ -52,10 +52,7 @@ function Login() {
     try {
       setLoading(true);
 
-      console.log(
-        "Login API URL:",
-        `${import.meta.env.VITE_API_URL}/auth/login`
-      );
+      console.log("Login API URL:", `${API_BASE_URL}/auth/login`);
 
       const response = await api.post<LoginResponse>(
         "/auth/login",
@@ -119,14 +116,20 @@ function Login() {
             }
           | undefined;
 
-        const message =
-          backendData?.message ||
-          backendData?.error ||
-          backendData?.errors?.[0]?.msg ||
-          backendData?.errors?.[0]?.message ||
-          (error.code === "ECONNABORTED"
-            ? "The server took too long to respond"
-            : "Login failed");
+        let message = "Login failed";
+
+        if (backendData && typeof backendData === "object") {
+          message =
+            backendData.message ||
+            backendData.error ||
+            backendData.errors?.[0]?.msg ||
+            backendData.errors?.[0]?.message ||
+            message;
+        } else if (!error.response) {
+          message = "Cannot connect to server. Check network or server status.";
+        } else if (error.code === "ECONNABORTED") {
+          message = "The server took too long to respond";
+        }
 
         toast.error(message);
       } else if (error instanceof Error) {

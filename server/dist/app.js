@@ -21,15 +21,37 @@ const wishlistRoutes_1 = __importDefault(require("./routes/wishlistRoutes"));
 const rateLimiter_1 = require("./middleware/rateLimiter");
 const requestLogger_1 = __importDefault(require("./middleware/requestLogger"));
 const app = (0, express_1.default)();
+app.set("trust proxy", 1);
 const swagger_1 = require("./config/swagger");
 // Middleware
-app.use((0, cors_1.default)());
+app.use((0, cors_1.default)({
+    origin: (origin, callback) => {
+        // Allow requests with no origin (e.g. mobile apps, curl, Postman)
+        if (!origin)
+            return callback(null, true);
+        const allowedOrigins = [
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://localhost:4173",
+            "http://localhost:3000",
+        ];
+        if (process.env.FRONTEND_URL) {
+            allowedOrigins.push(process.env.FRONTEND_URL);
+        }
+        if (allowedOrigins.includes(origin) ||
+            origin.endsWith(".vercel.app")) {
+            return callback(null, true);
+        }
+        return callback(new Error("CORS policy violation"), false);
+    },
+    credentials: true,
+}));
 app.use(express_1.default.json());
 app.use(requestLogger_1.default);
 app.use(rateLimiter_1.apiLimiter);
 // Test Route
 app.get("/", (req, res) => {
-    res.send("🚀 Food Delivery API is running...");
+    res.status(200).send("🚀 Food Delivery API is running...");
 });
 // Auth Routes
 app.use("/api/auth", authRoutes_1.default);
@@ -42,8 +64,6 @@ app.use("/api/foods", foodRoutes_1.default);
 app.use("/api/cart", cartRoutes_1.default);
 // Order Routes
 app.use("/api/orders", orderRoutes_1.default);
-// Error Middleware
-app.use(errorMiddleware_1.default);
 // Payment Routes
 app.use("/api/payments", paymentRoutes_1.default);
 // Review Routes
@@ -58,4 +78,13 @@ app.use("/api/notifications", notificationRoutes_1.default);
 app.use("/api/wishlist", wishlistRoutes_1.default);
 // Swagger Documentation
 app.use("/api-docs", swagger_1.swaggerUi.serve, swagger_1.swaggerUi.setup(swagger_1.swaggerSpec));
+// 404 handler
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: `Route not found: ${req.method} ${req.originalUrl}`,
+    });
+});
+// Error middleware must always be last
+app.use(errorMiddleware_1.default);
 exports.default = app;
