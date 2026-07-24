@@ -25,6 +25,7 @@ import wishlistRoutes from "./routes/wishlistRoutes";
 import { apiLimiter } from "./middleware/rateLimiter";
 
 import requestLogger from "./middleware/requestLogger";
+import { frontendOriginCallback } from "./config/cors";
 const app = express();
 
 app.set("trust proxy", 1);
@@ -37,30 +38,7 @@ import {
 // Middleware
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. mobile apps, curl, Postman)
-      if (!origin) return callback(null, true);
-
-      const allowedOrigins = [
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:4173",
-        "http://localhost:3000",
-      ];
-
-      if (process.env.FRONTEND_URL) {
-        allowedOrigins.push(process.env.FRONTEND_URL);
-      }
-
-      if (
-        allowedOrigins.includes(origin) ||
-        origin.endsWith(".vercel.app")
-      ) {
-        return callback(null, true);
-      }
-
-      return callback(new Error("CORS policy violation"), false);
-    },
+    origin: frontendOriginCallback,
     credentials: true,
   })
 );

@@ -15,6 +15,7 @@ import {
 import { getMyOrders } from "../../services/orderService";
 import type { IOrder, IAddress } from "../../types/food";
 import ReviewModal from "../../components/reviews/ReviewModal";
+import { useRealtime } from "../../hooks/useRealtime";
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -302,6 +303,7 @@ function OrderCard({
 }
 
 function OrdersPage() {
+  const { latestCreatedOrder, latestUpdatedOrder } = useRealtime();
   const [orders, setOrders] = useState<IOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -331,6 +333,26 @@ function OrdersPage() {
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+
+  useEffect(() => {
+    if (!latestCreatedOrder) return;
+    setOrders((current) => [
+      latestCreatedOrder,
+      ...current.filter((order) => order._id !== latestCreatedOrder._id),
+    ]);
+  }, [latestCreatedOrder]);
+
+  useEffect(() => {
+    if (!latestUpdatedOrder) return;
+    setOrders((current) =>
+      current.map((order) =>
+        order._id === latestUpdatedOrder._id ? latestUpdatedOrder : order
+      )
+    );
+    setSelectedOrder((current) =>
+      current?._id === latestUpdatedOrder._id ? latestUpdatedOrder : current
+    );
+  }, [latestUpdatedOrder]);
 
   const handleOpenReviewModal = (orderId: string, foodId: string, foodName: string) => {
     setReviewingInfo({ orderId, foodId, foodName });

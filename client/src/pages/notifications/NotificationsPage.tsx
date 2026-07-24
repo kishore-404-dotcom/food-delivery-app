@@ -11,6 +11,7 @@ import {
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useAuth } from "../../hooks/useAuth";
+import { useRealtime } from "../../hooks/useRealtime";
 import {
   getMyNotifications,
   markAsRead,
@@ -25,6 +26,7 @@ import {
 
 function NotificationsPage() {
   const { user, isAdmin, isAuthenticated } = useAuth();
+  const { latestNotification, refreshUnreadNotifications } = useRealtime();
   const [notifications, setNotifications] = useState<INotificationItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [sending, setSending] = useState<boolean>(false);
@@ -46,12 +48,21 @@ function NotificationsPage() {
     fetchNotifications();
   }, [fetchNotifications]);
 
+  useEffect(() => {
+    if (!latestNotification) return;
+    setNotifications((current) => [
+      latestNotification,
+      ...current.filter((item) => item._id !== latestNotification._id),
+    ]);
+  }, [latestNotification]);
+
   const handleMarkOneRead = async (id: string) => {
     try {
       await markAsRead(id);
       setNotifications((prev) =>
         prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
       );
+      void refreshUnreadNotifications();
       toast.success("Notification marked as read");
     } catch (err: unknown) {
       console.error("Error marking read:", err);
@@ -63,6 +74,7 @@ function NotificationsPage() {
     try {
       await markAllAsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      void refreshUnreadNotifications();
       toast.success("All notifications marked as read");
     } catch (err: unknown) {
       console.error("Error marking all read:", err);
@@ -74,6 +86,7 @@ function NotificationsPage() {
     try {
       await deleteNotification(id);
       setNotifications((prev) => prev.filter((n) => n._id !== id));
+      void refreshUnreadNotifications();
       toast.success("Notification deleted");
     } catch (err: unknown) {
       console.error("Error deleting notification:", err);

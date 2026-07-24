@@ -9,15 +9,18 @@ import {
   FaUserShield,
   FaClipboardList,
   FaHeart,
+  FaBell,
 } from "react-icons/fa";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
 import { useWishlist } from "../hooks/useWishlist";
+import { useRealtime } from "../hooks/useRealtime";
 
 function Navbar() {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
+  const { unreadNotifications } = useRealtime();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const navigate = useNavigate();
@@ -81,7 +84,20 @@ function Navbar() {
 
           {/* User Auth Section */}
           {isAuthenticated && user ? (
-            <div className="relative">
+            <>
+              <Link
+                to="/notifications"
+                aria-label={`${unreadNotifications} unread notifications`}
+                className="relative text-gray-700 transition hover:text-orange-500"
+              >
+                <FaBell size={21} />
+                {unreadNotifications > 0 && (
+                  <span className="absolute -right-2.5 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-bold text-white shadow">
+                    {unreadNotifications > 99 ? "99+" : unreadNotifications}
+                  </span>
+                )}
+              </Link>
+              <div className="relative">
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 className="flex items-center gap-2 rounded-full border bg-gray-50 px-4 py-2 text-sm font-semibold text-gray-800 transition hover:bg-gray-100"
@@ -154,7 +170,8 @@ function Navbar() {
                   </button>
                 </div>
               )}
-            </div>
+              </div>
+            </>
           ) : (
             <div className="flex items-center gap-3">
               <Link
@@ -241,6 +258,21 @@ function Navbar() {
                   className="block border-b px-6 py-4 font-medium text-gray-700 hover:bg-orange-50"
                 >
                   👤 Profile ({user?.name})
+                </Link>
+              </li>
+
+              <li>
+                <Link
+                  to="/notifications"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center justify-between border-b px-6 py-4 font-medium text-gray-700 hover:bg-orange-50"
+                >
+                  <span className="flex items-center gap-2"><FaBell /> Notifications</span>
+                  {unreadNotifications > 0 && (
+                    <span className="rounded-full bg-orange-500 px-2 py-0.5 text-xs text-white">
+                      {unreadNotifications > 99 ? "99+" : unreadNotifications}
+                    </span>
+                  )}
                 </Link>
               </li>
 

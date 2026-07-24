@@ -20,30 +20,13 @@ const notificationRoutes_1 = __importDefault(require("./routes/notificationRoute
 const wishlistRoutes_1 = __importDefault(require("./routes/wishlistRoutes"));
 const rateLimiter_1 = require("./middleware/rateLimiter");
 const requestLogger_1 = __importDefault(require("./middleware/requestLogger"));
+const cors_2 = require("./config/cors");
 const app = (0, express_1.default)();
 app.set("trust proxy", 1);
 const swagger_1 = require("./config/swagger");
 // Middleware
 app.use((0, cors_1.default)({
-    origin: (origin, callback) => {
-        // Allow requests with no origin (e.g. mobile apps, curl, Postman)
-        if (!origin)
-            return callback(null, true);
-        const allowedOrigins = [
-            "http://localhost:5173",
-            "http://localhost:5174",
-            "http://localhost:4173",
-            "http://localhost:3000",
-        ];
-        if (process.env.FRONTEND_URL) {
-            allowedOrigins.push(process.env.FRONTEND_URL);
-        }
-        if (allowedOrigins.includes(origin) ||
-            origin.endsWith(".vercel.app")) {
-            return callback(null, true);
-        }
-        return callback(new Error("CORS policy violation"), false);
-    },
+    origin: cors_2.frontendOriginCallback,
     credentials: true,
 }));
 app.use(express_1.default.json());

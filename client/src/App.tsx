@@ -20,14 +20,16 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { WishlistProvider } from "./context/WishlistContext";
+import { RealtimeProvider } from "./context/RealtimeContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AdminRoute from "./components/auth/AdminRoute";
 
 function App() {
   return (
     <AuthProvider>
-      <CartProvider>
-        <WishlistProvider>
+      <RealtimeProvider>
+        <CartProvider>
+          <WishlistProvider>
           <Navbar />
 
           <Routes>
@@ -58,8 +60,9 @@ function App() {
             {/* 404 Catch All */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </WishlistProvider>
-      </CartProvider>
+          </WishlistProvider>
+        </CartProvider>
+      </RealtimeProvider>
     </AuthProvider>
   );
 }
