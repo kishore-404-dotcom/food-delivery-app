@@ -15,6 +15,7 @@ import OrdersPage from "./pages/orders/OrdersPage";
 import PaymentsPage from "./pages/payments/PaymentsPage";
 import WishlistPage from "./pages/wishlist/WishlistPage";
 import NotificationsPage from "./pages/notifications/NotificationsPage";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
@@ -51,17 +52,7 @@ function App() {
 
             {/* Protected Admin Routes */}
             <Route element={<AdminRoute />}>
-              <Route
-                path="/admin"
-                element={
-                  <div className="min-h-screen p-8 text-center">
-                    <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-                    <p className="mt-2 text-gray-600">
-                      Welcome to Admin Control Panel (Management features will be connected in Phase 12)
-                    </p>
-                  </div>
-                }
-              />
+              <Route path="/admin" element={<AdminDashboard />} />
             </Route>
 
             {/* 404 Catch All */}
