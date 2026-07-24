@@ -1,6 +1,10 @@
 import express from "express";
 
 import {
+  getMyNotifications,
+  markAsRead,
+  markAllAsRead,
+  deleteNotification,
   sendWelcomeNotification,
   sendForgotPasswordNotification,
   sendOrderPlacedNotification,
@@ -9,67 +13,22 @@ import {
   sendRefundNotification,
 } from "../controllers/notificationController";
 
-import {
-  protect,
-  adminOnly,
-} from "../middleware/authMiddleware";
-
+import { protect, adminOnly } from "../middleware/authMiddleware";
 
 const router = express.Router();
 
+// User In-App Notifications
+router.get("/", protect, getMyNotifications);
+router.put("/read-all", protect, markAllAsRead);
+router.put("/:id/read", protect, markAsRead);
+router.delete("/:id", protect, deleteNotification);
 
-// Welcome Email
-router.post(
-  "/welcome",
-  protect,
-  adminOnly,
-  sendWelcomeNotification
-);
-
-
-// Forgot Password Email
-router.post(
-  "/forgot-password",
-  protect,
-  adminOnly,
-  sendForgotPasswordNotification
-);
-
-
-// Order Email
-router.post(
-  "/order",
-  protect,
-  adminOnly,
-  sendOrderPlacedNotification
-);
-
-
-// Delivered Email
-router.post(
-  "/delivered",
-  protect,
-  adminOnly,
-  sendDeliveredNotification
-);
-
-
-// Payment Email
-router.post(
-  "/payment",
-  protect,
-  adminOnly,
-  sendPaymentSuccessNotification
-);
-
-
-// Refund Email
-router.post(
-  "/refund",
-  protect,
-  adminOnly,
-  sendRefundNotification
-);
-
+// Admin Email Dispatch Notifications
+router.post("/welcome", protect, adminOnly, sendWelcomeNotification);
+router.post("/forgot-password", protect, adminOnly, sendForgotPasswordNotification);
+router.post("/order", protect, adminOnly, sendOrderPlacedNotification);
+router.post("/delivered", protect, adminOnly, sendDeliveredNotification);
+router.post("/payment", protect, adminOnly, sendPaymentSuccessNotification);
+router.post("/refund", protect, adminOnly, sendRefundNotification);
 
 export default router;

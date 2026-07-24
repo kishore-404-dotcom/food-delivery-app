@@ -1,6 +1,37 @@
 import api from "./api";
 import type { ApiResponse } from "../types/food";
 
+export interface INotificationItem {
+  _id: string;
+  user: string;
+  title: string;
+  message: string;
+  type: "ORDER" | "DELIVERY" | "PAYMENT" | "SYSTEM";
+  isRead: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const getMyNotifications = async (): Promise<INotificationItem[]> => {
+  const response = await api.get<ApiResponse<INotificationItem[]>>("/notifications");
+  return response.data.data;
+};
+
+export const markAsRead = async (id: string): Promise<INotificationItem> => {
+  const response = await api.put<ApiResponse<INotificationItem>>(
+    `/notifications/${id}/read`
+  );
+  return response.data.data;
+};
+
+export const markAllAsRead = async (): Promise<void> => {
+  await api.put<ApiResponse<void>>("/notifications/read-all");
+};
+
+export const deleteNotification = async (id: string): Promise<void> => {
+  await api.delete<ApiResponse<void>>(`/notifications/${id}`);
+};
+
 export const sendWelcomeNotification = async (
   email: string,
   name: string
