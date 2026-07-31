@@ -5,6 +5,8 @@ import {
   getProfile,
   updateProfile,
   changePassword,
+  forgotPassword,
+  resetPassword,
 } from "../controllers/authController";
 import { protect } from "../middleware/authMiddleware";
 import {
@@ -12,10 +14,16 @@ import {
   loginValidator,
   profileUpdateValidator,
   changePasswordValidator,
+  forgotPasswordValidator,
+  resetPasswordValidator,
 } from "../validators/authValidator";
 
 import validateRequest from "../middleware/validateRequest";
-import { authLimiter, registerLimiter } from "../middleware/rateLimiter";
+import {
+  authLimiter,
+  passwordResetLimiter,
+  registerLimiter,
+} from "../middleware/rateLimiter";
 
 const router = express.Router();
 
@@ -24,6 +32,22 @@ router.post("/register", registerValidator, validateRequest, registerLimiter, re
 
 // Login user
 router.post("/login", loginValidator, validateRequest, authLimiter, login);
+
+router.post(
+  "/forgot-password",
+  passwordResetLimiter,
+  forgotPasswordValidator,
+  validateRequest,
+  forgotPassword
+);
+
+router.post(
+  "/reset-password",
+  passwordResetLimiter,
+  resetPasswordValidator,
+  validateRequest,
+  resetPassword
+);
 
 // Get logged-in user profile
 router.get("/profile", protect, getProfile);

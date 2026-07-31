@@ -1,9 +1,16 @@
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import jwt from "jsonwebtoken";
 
 import User from "../models/user";
 import { ApiError } from "../utils/apiError";
-import { JWT_SECRET } from "../config/env";
+import { FRONTEND_URL, JWT_SECRET } from "../config/env";
+import { sendForgotPasswordEmail } from "./notificationService";
+import logger from "../config/logger";
+
+const RESET_TOKEN_TTL_MS = 15 * 60 * 1000;
+const hashResetToken = (token: string) =>
+  crypto.createHash("sha256").update(token).digest("hex");
 
 // Register user
 export const registerUser = async (userData: {
@@ -36,7 +43,11 @@ export const registerUser = async (userData: {
   });
 
   // Remove password before returning
-  const { password: _, ...userResponse } = user.toObject();
+  const {
+    password: _,
+    authVersion: _authVersion,
+    ...userResponse
+  } = user.toObject();
 
   return userResponse;
 };
@@ -44,7 +55,7 @@ export const registerUser = async (userData: {
 // Login user
 export const loginUser = async (email: string, password: string) => {
   // Find user
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email }).select("+authVersion");
 
   if (!user) {
     throw new ApiError(400, "Invalid email or password");
@@ -58,12 +69,21 @@ export const loginUser = async (email: string, password: string) => {
   }
 
   // Generate JWT token
-  const token = jwt.sign({ id: user._id.toString() }, JWT_SECRET, {
-    expiresIn: "7d",
-  });
+  const token = jwt.sign(
+    {
+      id: user._id.toString(),
+      authVersion: user.authVersion ?? 0,
+    },
+    JWT_SECRET,
+    { expiresIn: "7d" }
+  );
 
   // Remove password before returning
-  const { password: _, ...userResponse } = user.toObject();
+  const {
+    password: _,
+    authVersion: _authVersion,
+    ...userResponse
+  } = user.toObject();
 
   return {
     token,
@@ -97,7 +117,9 @@ export const changePasswordService = async (
   currentPassword: string,
   newPassword: string
 ) => {
-  const user = await User.findById(userId);
+  const user = await User.findById(userId).select(
+    "+authVersion +resetPasswordToken +resetPasswordExpires"
+  );
 
   if (!user) {
     throw new ApiError(404, "User not found");
@@ -113,7 +135,71 @@ export const changePasswordService = async (
   }
 
   user.password = await bcrypt.hash(newPassword, 10);
+  user.passwordChangedAt = new Date();
+  user.authVersion = (user.authVersion ?? 0) + 1;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpires = undefined;
   await user.save();
 
   return { message: "Password updated successfully" };
+};
+
+export const requestPasswordResetService = async (email: string) => {
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = await User.findOne({ email: normalizedEmail }).select(
+    "+resetPasswordToken +resetPasswordExpires"
+  );
+
+  if (!user) {
+    return;
+  }
+
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  user.resetPasswordToken = hashResetToken(rawToken);
+  user.resetPasswordExpires = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+  await user.save();
+
+  try {
+    const resetUrl = new URL("/reset-password", FRONTEND_URL);
+    resetUrl.searchParams.set("token", rawToken);
+    await sendForgotPasswordEmail(user.email, resetUrl.toString());
+  } catch (error) {
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+    logger.error("Password reset email delivery failed", {
+      error: error instanceof Error ? error.message : "Unknown mail error",
+    });
+  }
+};
+
+export const resetPasswordService = async (
+  rawToken: string,
+  newPassword: string
+) => {
+  const tokenHash = hashResetToken(rawToken);
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  const user = await User.findOneAndUpdate(
+    {
+      resetPasswordToken: tokenHash,
+      resetPasswordExpires: { $gt: new Date() },
+    },
+    {
+      $set: {
+        password: hashedPassword,
+        passwordChangedAt: new Date(),
+      },
+      $inc: { authVersion: 1 },
+      $unset: {
+        resetPasswordToken: 1,
+        resetPasswordExpires: 1,
+      },
+    },
+    { new: true }
+  );
+
+  if (!user) {
+    throw new ApiError(400, "Password reset link is invalid or has expired");
+  }
+
 };

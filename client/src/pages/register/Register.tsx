@@ -282,9 +282,13 @@ function Register() {
                 {...register("password", {
                   required: "Password is required",
                   minLength: {
-                    value: 6,
+                    value: 8,
                     message:
-                      "Password must contain at least 6 characters",
+                      "Password must contain at least 8 characters",
+                  },
+                  maxLength: {
+                    value: 128,
+                    message: "Password cannot exceed 128 characters",
                   },
                 })}
                 className="w-full rounded-lg border border-gray-300 px-4 py-3 pr-12 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100 disabled:cursor-not-allowed disabled:bg-gray-100"

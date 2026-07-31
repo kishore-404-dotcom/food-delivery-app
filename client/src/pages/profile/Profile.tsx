@@ -140,8 +140,8 @@ function Profile() {
       return;
     }
 
-    if (newPassword.length < 6) {
-      toast.error("New password must be at least 6 characters long");
+    if (newPassword.length < 8 || newPassword.length > 128) {
+      toast.error("New password must be between 8 and 128 characters");
       return;
     }
 

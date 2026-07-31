@@ -17,11 +17,11 @@ export interface AuthRequest<
 }
 
 // Verify JWT token
-export const protect = (
+export const protect = async (
   req: AuthRequest,
-  res: Response,
+  _res: Response,
   next: NextFunction
-): void => {
+): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -34,6 +34,14 @@ export const protect = (
 
     // Verify JWT
     const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+
+    const user = await User.findById(decoded.id).select("+authVersion");
+    if (!user) {
+      throw new ApiError(401, "Not authorized. User no longer exists.");
+    }
+    if ((decoded.authVersion ?? 0) !== (user.authVersion ?? 0)) {
+      throw new ApiError(401, "Session expired. Please login again.");
+    }
 
     req.user = decoded;
 

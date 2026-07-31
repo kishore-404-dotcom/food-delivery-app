@@ -34,4 +34,20 @@ describe("Auth API", () => {
     expect(response.statusCode).toBe(401);
   });
 
+  it("validates forgot-password email input", async () => {
+    const response = await request(app)
+      .post("/api/auth/forgot-password")
+      .send({ email: "not-an-email" });
+
+    expect(response.statusCode).toBe(400);
+  });
+
+  it("rejects malformed password reset tokens", async () => {
+    const response = await request(app)
+      .post("/api/auth/reset-password")
+      .send({ token: "invalid", newPassword: "new-password-123" });
+
+    expect(response.statusCode).toBe(400);
+  });
+
 });

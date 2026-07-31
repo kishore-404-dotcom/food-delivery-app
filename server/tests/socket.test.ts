@@ -33,9 +33,12 @@ describe("Socket.IO authentication and room authorization", () => {
 
   it("uses the database role and only returns the authenticated user's room", async () => {
     const userId = new mongoose.Types.ObjectId();
-    jest.spyOn(User, "findById").mockResolvedValue({
-      _id: userId,
-      role: "customer",
+    jest.spyOn(User, "findById").mockReturnValue({
+      select: jest.fn().mockResolvedValue({
+        _id: userId,
+        role: "customer",
+        authVersion: 0,
+      }),
     } as never);
     const token = jwt.sign({ id: userId.toString() }, JWT_SECRET);
 
@@ -47,9 +50,12 @@ describe("Socket.IO authentication and room authorization", () => {
 
   it("adds the admin room only when the database role is admin", async () => {
     const userId = new mongoose.Types.ObjectId();
-    jest.spyOn(User, "findById").mockResolvedValue({
-      _id: userId,
-      role: "admin",
+    jest.spyOn(User, "findById").mockReturnValue({
+      select: jest.fn().mockResolvedValue({
+        _id: userId,
+        role: "admin",
+        authVersion: 0,
+      }),
     } as never);
     const token = jwt.sign({ id: userId.toString() }, JWT_SECRET);
 

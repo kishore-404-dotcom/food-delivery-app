@@ -49,9 +49,14 @@ export const authenticateSocketToken = async (
     throw error;
   }
 
-  const user = await User.findById(decoded.id);
+  const user = await User.findById(decoded.id).select("+authVersion");
   if (!user) {
     const error = new Error("Authenticated user no longer exists");
+    Object.assign(error, { data: { code: "AUTH_INVALID" } });
+    throw error;
+  }
+  if ((decoded.authVersion ?? 0) !== (user.authVersion ?? 0)) {
+    const error = new Error("Authentication session has expired");
     Object.assign(error, { data: { code: "AUTH_INVALID" } });
     throw error;
   }

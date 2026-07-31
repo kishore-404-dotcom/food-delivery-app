@@ -17,6 +17,12 @@ const CustomerDashboard = lazy(
 );
 const Login = lazy(() => import("./pages/login/Login"));
 const Register = lazy(() => import("./pages/register/Register"));
+const ForgotPassword = lazy(
+  () => import("./pages/forgotPassword/ForgotPassword")
+);
+const ResetPassword = lazy(
+  () => import("./pages/resetPassword/ResetPassword")
+);
 const Cart = lazy(() => import("./pages/cart/Cart"));
 const Profile = lazy(() => import("./pages/profile/Profile"));
 const NotFound = lazy(() => import("./pages/notFound/NotFound"));
@@ -61,7 +67,10 @@ function App() {
             <Route element={<GuestRoute />}>
               <Route path="/register" element={<Register />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
             </Route>
+
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* The complete customer experience requires authentication. */}
             <Route element={<CustomerRoute />}>

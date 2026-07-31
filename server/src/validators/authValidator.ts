@@ -11,8 +11,8 @@ export const registerValidator = [
     .withMessage("Invalid email"),
 
   body("password")
-    .isLength({ min: 6 })
-    .withMessage("Password must be at least 6 characters"),
+    .isLength({ min: 8, max: 128 })
+    .withMessage("Password must be between 8 and 128 characters"),
 
   body("phone")
     .notEmpty()
@@ -48,4 +48,23 @@ export const profileUpdateValidator = [
 export const changePasswordValidator = [
   body("currentPassword").isString().notEmpty(),
   body("newPassword").isString().isLength({ min: 8, max: 128 }),
+];
+
+export const forgotPasswordValidator = [
+  body("email")
+    .trim()
+    .isEmail()
+    .withMessage("Enter a valid email address")
+    .normalizeEmail(),
+];
+
+export const resetPasswordValidator = [
+  body("token")
+    .isString()
+    .matches(/^[a-f0-9]{64}$/)
+    .withMessage("Invalid password reset token"),
+  body("newPassword")
+    .isString()
+    .isLength({ min: 8, max: 128 })
+    .withMessage("Password must be between 8 and 128 characters"),
 ];

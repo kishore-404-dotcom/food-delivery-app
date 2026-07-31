@@ -28,3 +28,21 @@ export const changePassword = async (
 ): Promise<void> => {
   await api.put<ApiResponse<void>>("/auth/change-password", data);
 };
+
+export const requestPasswordReset = async (email: string): Promise<string> => {
+  const response = await api.post<ApiResponse<void>>("/auth/forgot-password", {
+    email,
+  });
+  return response.data.message;
+};
+
+export const resetPassword = async (
+  token: string,
+  newPassword: string
+): Promise<string> => {
+  const response = await api.post<ApiResponse<void>>("/auth/reset-password", {
+    token,
+    newPassword,
+  });
+  return response.data.message;
+};

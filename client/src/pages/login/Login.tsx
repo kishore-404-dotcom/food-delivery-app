@@ -46,6 +46,9 @@ function Login() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const passwordWasReset = Boolean(
+    (location.state as { passwordReset?: boolean } | null)?.passwordReset
+  );
 
   const onSubmit = async (formData: LoginForm) => {
     try {
@@ -137,6 +140,15 @@ function Login() {
           Login to continue ordering your favourite food.
         </p>
 
+        {passwordWasReset && (
+          <p
+            role="status"
+            className="mb-5 rounded-lg border border-green-200 bg-green-50 p-3 text-sm font-medium text-green-800"
+          >
+            Password reset successfully. Login with your new password.
+          </p>
+        )}
+
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-5"
@@ -225,6 +237,14 @@ function Login() {
                 {errors.password.message}
               </p>
             )}
+            <div className="mt-2 text-right">
+              <Link
+                to="/forgot-password"
+                className="text-sm font-semibold text-orange-600 hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </div>
           </div>
 
           <button

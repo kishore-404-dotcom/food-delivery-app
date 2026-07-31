@@ -7,6 +7,10 @@ export interface IUser extends Document {
   phone: string;
   role: "customer" | "restaurant_owner" | "admin";
   restaurantStatus?: "pending" | "approved" | "rejected";
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
+  passwordChangedAt?: Date;
+  authVersion: number;
 }
 
 const userSchema = new Schema<IUser>(
@@ -46,6 +50,27 @@ const userSchema = new Schema<IUser>(
       required: function () {
         return this.role === "restaurant_owner";
       },
+    },
+
+    resetPasswordToken: {
+      type: String,
+      select: false,
+    },
+
+    resetPasswordExpires: {
+      type: Date,
+      select: false,
+    },
+
+    passwordChangedAt: {
+      type: Date,
+      select: false,
+    },
+
+    authVersion: {
+      type: Number,
+      default: 0,
+      select: false,
     },
   },
   {

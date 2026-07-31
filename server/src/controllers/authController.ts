@@ -6,6 +6,8 @@ import {
   loginUser,
   updateUserProfileService,
   changePasswordService,
+  requestPasswordResetService,
+  resetPasswordService,
 } from "../services/authService";
 import User from "../models/user";
 import { AuthRequest } from "../middleware/authMiddleware";
@@ -72,6 +74,32 @@ export const changePassword = asyncHandler(
 
     res.status(200).json(
       new ApiResponse(true, "Password changed successfully")
+    );
+  }
+);
+
+export const forgotPassword = asyncHandler(
+  async (req: Request, res: Response) => {
+    await requestPasswordResetService(req.body.email);
+
+    res.status(200).json(
+      new ApiResponse(
+        true,
+        "If an account exists for that email, a password reset link has been sent"
+      )
+    );
+  }
+);
+
+export const resetPassword = asyncHandler(
+  async (req: Request, res: Response) => {
+    await resetPasswordService(req.body.token, req.body.newPassword);
+
+    res.status(200).json(
+      new ApiResponse(
+        true,
+        "Password reset successfully. Please login with your new password"
+      )
     );
   }
 );
