@@ -30,9 +30,14 @@ export const changePassword = async (
 };
 
 export const requestPasswordReset = async (email: string): Promise<string> => {
-  const response = await api.post<ApiResponse<void>>("/auth/forgot-password", {
-    email,
-  });
+  const response = await api.post<ApiResponse<void>>(
+    "/auth/forgot-password",
+    { email },
+    {
+      // Render free services can take 50 seconds or more to wake from sleep.
+      timeout: 90_000,
+    }
+  );
   return response.data.message;
 };
 

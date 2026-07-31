@@ -7,6 +7,9 @@ import { requestPasswordReset } from "../../services/userService";
 
 const getErrorMessage = (error: unknown) => {
   if (axios.isAxiosError<{ message?: string }>(error)) {
+    if (error.code === "ECONNABORTED" || !error.response) {
+      return "The server is taking longer than expected to start. Please try again in a moment.";
+    }
     return error.response?.data?.message || "Unable to request a reset link";
   }
   return "Unable to request a reset link";
