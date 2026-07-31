@@ -35,6 +35,8 @@ export const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD?.trim() || "";
 export const MAIL_HOST = process.env.MAIL_HOST?.trim() || "";
 export const MAIL_PORT = Number(process.env.MAIL_PORT || 587);
 export const MAIL_SECURE = process.env.MAIL_SECURE === "true";
+export const BREVO_API_KEY = process.env.BREVO_API_KEY?.trim() || "";
+export const EMAIL_FROM = process.env.EMAIL_FROM?.trim() || EMAIL_USER;
 export const REDIS_URL = process.env.REDIS_URL?.trim() || "";
 
 export const validateEnvironment = (): void => {
@@ -66,6 +68,7 @@ export const validateEnvironment = (): void => {
       "EMAIL_USER",
       "EMAIL_PASSWORD",
     ]);
+    validateOptionalGroup("Brevo", ["BREVO_API_KEY", "EMAIL_FROM"]);
 
     const frontend = new URL(FRONTEND_URL);
     if (frontend.protocol !== "https:") {
