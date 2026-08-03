@@ -51,3 +51,24 @@ export const resetPassword = async (
   });
   return response.data.message;
 };
+
+export const verifyEmailOtp = async (
+  email: string,
+  otp: string
+): Promise<string> => {
+  const response = await api.post<ApiResponse<{ emailVerified: boolean }>>(
+    "/auth/verify-email",
+    { email, otp }
+  );
+  return response.data.message;
+};
+
+export const resendEmailVerificationOtp = async (
+  email: string
+): Promise<string> => {
+  const response = await api.post<ApiResponse<void>>(
+    "/auth/resend-verification-otp",
+    { email }
+  );
+  return response.data.message;
+};

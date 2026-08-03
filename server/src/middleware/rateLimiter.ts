@@ -82,3 +82,14 @@ export const passwordResetLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+export const emailVerificationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: {
+    success: false,
+    message: "Too many email verification attempts. Please try again later.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});

@@ -6,6 +6,12 @@ export interface IUser extends Document {
   password: string;
   phone: string;
   role: "customer" | "restaurant_owner" | "admin";
+  emailVerified: boolean;
+  emailVerifiedAt?: Date;
+  emailVerificationOtpHash?: string;
+  emailVerificationOtpExpires?: Date;
+  emailVerificationAttempts: number;
+  emailVerificationLastSentAt?: Date;
   restaurantStatus?: "pending" | "approved" | "rejected";
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
@@ -42,6 +48,36 @@ const userSchema = new Schema<IUser>(
       type: String,
       enum: ["customer", "restaurant_owner", "admin"],
       default: "customer",
+    },
+
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    emailVerifiedAt: {
+      type: Date,
+    },
+
+    emailVerificationOtpHash: {
+      type: String,
+      select: false,
+    },
+
+    emailVerificationOtpExpires: {
+      type: Date,
+      select: false,
+    },
+
+    emailVerificationAttempts: {
+      type: Number,
+      default: 0,
+      select: false,
+    },
+
+    emailVerificationLastSentAt: {
+      type: Date,
+      select: false,
     },
 
     restaurantStatus: {
