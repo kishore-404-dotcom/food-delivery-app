@@ -9,7 +9,8 @@ export const API_BASE_URL = configuredApiUrl.replace(/\/+$/, "");
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  // Render free services may need more than 50 seconds to wake from sleep.
+  timeout: 90000,
 });
 
 api.interceptors.request.use((config) => {

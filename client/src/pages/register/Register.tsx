@@ -93,17 +93,17 @@ function Register() {
             backendData.errors?.[0]?.msg ||
             backendData.errors?.[0]?.message ||
             message;
+        } else if (error.code === "ECONNABORTED") {
+          message = "The server is taking longer than expected to start. Please try again.";
         } else if (!error.response) {
           message = "Cannot connect to server. Check network or server status.";
-        } else if (error.code === "ECONNABORTED") {
-          message = "The server took too long to respond";
         }
 
-        toast.error(message);
+        toast.error(message, { toastId: "registration-error" });
       } else if (error instanceof Error) {
-        toast.error(error.message);
+        toast.error(error.message, { toastId: "registration-error" });
       } else {
-        toast.error("Something went wrong");
+        toast.error("Something went wrong", { toastId: "registration-error" });
       }
     } finally {
       setLoading(false);
@@ -118,7 +118,8 @@ function Register() {
     toast.error(
       typeof firstError?.message === "string"
         ? firstError.message
-        : "Please correct the highlighted registration fields."
+        : "Please correct the highlighted registration fields.",
+      { toastId: "registration-error" }
     );
   };
 

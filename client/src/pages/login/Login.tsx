@@ -115,18 +115,18 @@ function Login() {
             backendData.errors?.[0]?.msg ||
             backendData.errors?.[0]?.message ||
             message;
+        } else if (error.code === "ECONNABORTED") {
+          message = "The server is taking longer than expected to start. Please try again.";
         } else if (!error.response) {
           message = "Cannot connect to server. Check network or server status.";
-        } else if (error.code === "ECONNABORTED") {
-          message = "The server took too long to respond";
         }
 
-        toast.error(message);
+        toast.error(message, { toastId: "login-error" });
 
       } else if (error instanceof Error) {
-        toast.error(error.message);
+        toast.error(error.message, { toastId: "login-error" });
       } else {
-        toast.error("Something went wrong");
+        toast.error("Something went wrong", { toastId: "login-error" });
       }
     } finally {
       setLoading(false);
