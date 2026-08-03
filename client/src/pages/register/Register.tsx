@@ -66,15 +66,11 @@ function Register() {
         payload
       );
 
-      toast.success(
-        response.data.message ||
-          "Enter the OTP sent to your email."
-      );
-
-      navigate(
-        `/verify-email?email=${encodeURIComponent(payload.email)}`,
-        { state: { registrationStarted: true } }
-      );
+      toast.success(response.data.message || "Registration successful.");
+      navigate("/login", {
+        replace: true,
+        state: { accountCreated: true },
+      });
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         const backendData = error.response?.data as

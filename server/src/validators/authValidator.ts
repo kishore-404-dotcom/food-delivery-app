@@ -34,26 +34,6 @@ export const loginValidator = [
     .withMessage("Password is required"),
 ];
 
-export const verifyEmailValidator = [
-  body("email")
-    .trim()
-    .isEmail()
-    .withMessage("Enter a valid email address")
-    .normalizeEmail(),
-  body("otp")
-    .isString()
-    .matches(/^\d{6}$/)
-    .withMessage("OTP must contain exactly 6 digits"),
-];
-
-export const resendVerificationOtpValidator = [
-  body("email")
-    .trim()
-    .isEmail()
-    .withMessage("Enter a valid email address")
-    .normalizeEmail(),
-];
-
 export const profileUpdateValidator = [
   body("name").optional().trim().isLength({ min: 2, max: 80 }),
   body("phone").optional().trim().matches(/^[0-9]{10,15}$/),
