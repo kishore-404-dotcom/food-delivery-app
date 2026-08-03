@@ -26,8 +26,10 @@ export const registerValidator = [
 
 export const loginValidator = [
   body("email")
+    .trim()
     .isEmail()
-    .withMessage("Invalid email"),
+    .withMessage("Invalid email")
+    .normalizeEmail(),
 
   body("password")
     .notEmpty()

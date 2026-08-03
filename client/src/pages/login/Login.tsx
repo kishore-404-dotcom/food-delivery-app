@@ -57,10 +57,10 @@ function Login() {
     try {
       setLoading(true);
 
-      const response = await api.post<LoginResponse>(
-        "/auth/login",
-        formData
-      );
+      const response = await api.post<LoginResponse>("/auth/login", {
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
+      });
 
       const token =
         response.data.token ??

@@ -58,7 +58,9 @@ export const registerUser = async (userData: {
 };
 
 // Login user
-export const loginUser = async (email: string, password: string) => {
+export const loginUser = async (emailInput: string, password: string) => {
+  const email = normalizeEmail(emailInput);
+
   // Find user
   const user = await User.findOne({ email }).select("+authVersion");
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, type FieldErrors } from "react-hook-form";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { ClipLoader } from "react-spinners";
 import { toast } from "react-toastify";
@@ -110,6 +110,18 @@ function Register() {
     }
   };
 
+  const onInvalid = (formErrors: FieldErrors<RegisterForm>) => {
+    const firstError = Object.values(formErrors).find(
+      (error) => typeof error?.message === "string"
+    );
+
+    toast.error(
+      typeof firstError?.message === "string"
+        ? firstError.message
+        : "Please correct the highlighted registration fields."
+    );
+  };
+
   return (
     <section className="flex min-h-[calc(100vh-80px)] items-center justify-center bg-orange-50 px-4 py-10">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
@@ -122,7 +134,7 @@ function Register() {
         </p>
 
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(onSubmit, onInvalid)}
           className="space-y-5"
           noValidate
         >
