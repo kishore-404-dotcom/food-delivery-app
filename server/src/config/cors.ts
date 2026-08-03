@@ -1,4 +1,4 @@
-import { FRONTEND_URL, NODE_ENV } from "./env";
+import { FRONTEND_URL, FRONTEND_URLS, NODE_ENV } from "./env";
 
 const LOCAL_FRONTEND_ORIGINS = new Set([
   "http://localhost:5173",
@@ -10,6 +10,7 @@ const LOCAL_FRONTEND_ORIGINS = new Set([
 export const isAllowedFrontendOrigin = (origin?: string): boolean => {
   if (!origin) return true;
   if (FRONTEND_URL === origin) return true;
+  if (FRONTEND_URLS.includes(origin)) return true;
   return NODE_ENV !== "production" && LOCAL_FRONTEND_ORIGINS.has(origin);
 };
 

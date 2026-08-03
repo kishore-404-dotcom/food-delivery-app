@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 
-import { FRONTEND_URL, JWT_SECRET } from "../src/config/env";
+import { FRONTEND_URL, FRONTEND_URLS, JWT_SECRET } from "../src/config/env";
 import { isAllowedFrontendOrigin } from "../src/config/cors";
 import User from "../src/models/user";
 import {
@@ -70,6 +70,9 @@ describe("Socket.IO authentication and room authorization", () => {
   it("accepts local development and only the configured production origin", () => {
     expect(isAllowedFrontendOrigin("http://localhost:5173")).toBe(true);
     if (FRONTEND_URL) expect(isAllowedFrontendOrigin(FRONTEND_URL)).toBe(true);
+    for (const configuredOrigin of FRONTEND_URLS) {
+      expect(isAllowedFrontendOrigin(configuredOrigin)).toBe(true);
+    }
     expect(isAllowedFrontendOrigin("https://unconfigured-preview.vercel.app")).toBe(false);
     expect(isAllowedFrontendOrigin("http://foodie.vercel.app")).toBe(false);
     expect(isAllowedFrontendOrigin("https://vercel.app.attacker.example")).toBe(false);

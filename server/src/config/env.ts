@@ -25,6 +25,10 @@ export const PORT = Number(process.env.PORT || 5000);
 export const JWT_SECRET = process.env.JWT_SECRET?.trim() || "";
 export const MONGODB_URI = process.env.MONGODB_URI?.trim() || "";
 export const FRONTEND_URL = process.env.FRONTEND_URL?.trim() || "";
+export const FRONTEND_URLS = (process.env.FRONTEND_URLS || "")
+  .split(",")
+  .map((value) => value.trim())
+  .filter(Boolean);
 export const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME?.trim() || "";
 export const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY?.trim() || "";
 export const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET?.trim() || "";
@@ -75,6 +79,13 @@ export const validateEnvironment = (): void => {
     const frontend = new URL(FRONTEND_URL);
     if (frontend.protocol !== "https:") {
       throw new Error("FRONTEND_URL must use HTTPS in production");
+    }
+
+    for (const configuredFrontend of FRONTEND_URLS) {
+      const frontendOrigin = new URL(configuredFrontend);
+      if (frontendOrigin.protocol !== "https:") {
+        throw new Error("FRONTEND_URLS entries must use HTTPS in production");
+      }
     }
   }
 };
