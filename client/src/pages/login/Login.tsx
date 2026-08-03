@@ -49,6 +49,9 @@ function Login() {
   const passwordWasReset = Boolean(
     (location.state as { passwordReset?: boolean } | null)?.passwordReset
   );
+  const emailWasVerified = Boolean(
+    (location.state as { emailVerified?: boolean } | null)?.emailVerified
+  );
 
   const onSubmit = async (formData: LoginForm) => {
     try {
@@ -119,6 +122,17 @@ function Login() {
         }
 
         toast.error(message);
+
+        if (
+          error.response?.status === 403 &&
+          message === "Email verification required"
+        ) {
+          navigate(
+            `/verify-email?email=${encodeURIComponent(
+              formData.email.trim().toLowerCase()
+            )}`
+          );
+        }
       } else if (error instanceof Error) {
         toast.error(error.message);
       } else {
@@ -146,6 +160,15 @@ function Login() {
             className="mb-5 rounded-lg border border-green-200 bg-green-50 p-3 text-sm font-medium text-green-800"
           >
             Password reset successfully. Login with your new password.
+          </p>
+        )}
+
+        {emailWasVerified && (
+          <p
+            role="status"
+            className="mb-5 rounded-lg border border-green-200 bg-green-50 p-3 text-sm font-medium text-green-800"
+          >
+            Email verified successfully. Login to continue.
           </p>
         )}
 

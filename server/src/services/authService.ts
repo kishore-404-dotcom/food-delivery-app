@@ -5,12 +5,26 @@ import jwt from "jsonwebtoken";
 import User from "../models/user";
 import { ApiError } from "../utils/apiError";
 import { FRONTEND_URL, JWT_SECRET } from "../config/env";
-import { sendForgotPasswordEmail } from "./notificationService";
+import {
+  sendEmailVerificationOtp,
+  sendForgotPasswordEmail,
+  sendWelcomeEmail,
+} from "./notificationService";
 import logger from "../config/logger";
 
 const RESET_TOKEN_TTL_MS = 15 * 60 * 1000;
+const EMAIL_OTP_TTL_MS = 10 * 60 * 1000;
+const EMAIL_OTP_RESEND_COOLDOWN_MS = 60 * 1000;
+const EMAIL_OTP_MAX_ATTEMPTS = 5;
 const hashResetToken = (token: string) =>
   crypto.createHash("sha256").update(token).digest("hex");
+const normalizeEmail = (email: string) => email.trim().toLowerCase();
+const createEmailOtp = () => crypto.randomInt(100000, 1000000).toString();
+const hashEmailOtp = (email: string, otp: string) =>
+  crypto
+    .createHmac("sha256", JWT_SECRET)
+    .update(`${normalizeEmail(email)}:${otp}`)
+    .digest("hex");
 
 // Register user
 export const registerUser = async (userData: {
@@ -20,7 +34,8 @@ export const registerUser = async (userData: {
   phone: string;
   role?: "customer" | "restaurant_owner";
 }) => {
-  const { name, email, password, phone, role = "customer" } = userData;
+  const { name, password, phone, role = "customer" } = userData;
+  const email = normalizeEmail(userData.email);
 
   // Check if email already exists
   const existingUser = await User.findOne({ email });
@@ -29,7 +44,9 @@ export const registerUser = async (userData: {
     throw new ApiError(400, "Email already registered");
   }
 
-  // Hash password
+  const otp = createEmailOtp();
+
+  // Hash credentials before persisting them.
   const hashedPassword = await bcrypt.hash(password, 10);
 
   // Create user
@@ -39,17 +56,136 @@ export const registerUser = async (userData: {
     password: hashedPassword,
     phone,
     role,
+    emailVerified: false,
+    emailVerificationOtpHash: hashEmailOtp(email, otp),
+    emailVerificationOtpExpires: new Date(Date.now() + EMAIL_OTP_TTL_MS),
+    emailVerificationAttempts: 0,
+    emailVerificationLastSentAt: new Date(),
     ...(role === "restaurant_owner" ? { restaurantStatus: "pending" } : {}),
   });
 
-  // Remove password before returning
-  const {
-    password: _,
-    authVersion: _authVersion,
-    ...userResponse
-  } = user.toObject();
+  try {
+    await sendEmailVerificationOtp(email, otp);
+  } catch (error) {
+    await User.deleteOne({ _id: user._id });
+    logger.error("Registration verification email delivery failed", {
+      error: error instanceof Error ? error.message : "Unknown mail error",
+    });
+    throw new ApiError(
+      503,
+      "Unable to send the verification email. Please try registering again."
+    );
+  }
 
-  return userResponse;
+  // Remove password before returning
+  return {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+    emailVerified: user.emailVerified,
+    ...(user.restaurantStatus
+      ? { restaurantStatus: user.restaurantStatus }
+      : {}),
+  };
+};
+
+export const verifyEmailOtpService = async (emailInput: string, otp: string) => {
+  const email = normalizeEmail(emailInput);
+  const user = await User.findOne({ email }).select(
+    "+emailVerificationOtpHash +emailVerificationOtpExpires +emailVerificationAttempts"
+  );
+
+  if (!user || user.role === "admin") {
+    throw new ApiError(400, "Invalid or expired verification OTP");
+  }
+
+  if (user.emailVerified) {
+    return { email: user.email, emailVerified: true };
+  }
+
+  if (
+    !user.emailVerificationOtpHash ||
+    !user.emailVerificationOtpExpires ||
+    user.emailVerificationOtpExpires.getTime() <= Date.now()
+  ) {
+    throw new ApiError(400, "Verification OTP has expired. Request a new OTP.");
+  }
+
+  if ((user.emailVerificationAttempts ?? 0) >= EMAIL_OTP_MAX_ATTEMPTS) {
+    throw new ApiError(429, "Too many incorrect OTP attempts. Request a new OTP.");
+  }
+
+  const submittedHash = hashEmailOtp(email, otp);
+  const storedHash = Buffer.from(user.emailVerificationOtpHash, "hex");
+  const submittedHashBuffer = Buffer.from(submittedHash, "hex");
+  const matches =
+    storedHash.length === submittedHashBuffer.length &&
+    crypto.timingSafeEqual(storedHash, submittedHashBuffer);
+
+  if (!matches) {
+    user.emailVerificationAttempts = (user.emailVerificationAttempts ?? 0) + 1;
+    await user.save();
+    throw new ApiError(400, "Invalid or expired verification OTP");
+  }
+
+  user.emailVerified = true;
+  user.emailVerifiedAt = new Date();
+  user.emailVerificationOtpHash = undefined;
+  user.emailVerificationOtpExpires = undefined;
+  user.emailVerificationAttempts = 0;
+  user.emailVerificationLastSentAt = undefined;
+  await user.save();
+
+  try {
+    await sendWelcomeEmail(user.email, user.name);
+  } catch (error) {
+    logger.warn("Welcome email delivery failed", {
+      error: error instanceof Error ? error.message : "Unknown mail error",
+    });
+  }
+
+  return { email: user.email, emailVerified: true };
+};
+
+export const resendEmailVerificationOtpService = async (emailInput: string) => {
+  const email = normalizeEmail(emailInput);
+  const user = await User.findOne({ email }).select(
+    "+emailVerificationOtpHash +emailVerificationOtpExpires +emailVerificationAttempts +emailVerificationLastSentAt"
+  );
+
+  if (!user || user.role === "admin" || user.emailVerified) {
+    return;
+  }
+
+  if (
+    user.emailVerificationLastSentAt &&
+    Date.now() - user.emailVerificationLastSentAt.getTime() <
+      EMAIL_OTP_RESEND_COOLDOWN_MS
+  ) {
+    throw new ApiError(429, "Please wait one minute before requesting another OTP.");
+  }
+
+  const otp = createEmailOtp();
+  user.emailVerificationOtpHash = hashEmailOtp(email, otp);
+  user.emailVerificationOtpExpires = new Date(Date.now() + EMAIL_OTP_TTL_MS);
+  user.emailVerificationAttempts = 0;
+  user.emailVerificationLastSentAt = new Date();
+  await user.save();
+
+  try {
+    await sendEmailVerificationOtp(email, otp);
+  } catch (error) {
+    user.emailVerificationOtpHash = undefined;
+    user.emailVerificationOtpExpires = undefined;
+    user.emailVerificationLastSentAt = undefined;
+    await user.save();
+    logger.error("Verification OTP resend failed", {
+      error: error instanceof Error ? error.message : "Unknown mail error",
+    });
+    throw new ApiError(503, "Unable to send verification email. Please try again.");
+  }
 };
 
 // Login user
@@ -66,6 +202,11 @@ export const loginUser = async (email: string, password: string) => {
 
   if (!isMatch) {
     throw new ApiError(400, "Invalid email or password");
+  }
+
+  // Existing administrators predate email verification and remain accessible.
+  if (user.role !== "admin" && !user.emailVerified) {
+    throw new ApiError(403, "Email verification required");
   }
 
   // Generate JWT token

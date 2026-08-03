@@ -8,6 +8,8 @@ import {
   changePasswordService,
   requestPasswordResetService,
   resetPasswordService,
+  resendEmailVerificationOtpService,
+  verifyEmailOtpService,
 } from "../services/authService";
 import User from "../models/user";
 import { AuthRequest } from "../middleware/authMiddleware";
@@ -23,9 +25,34 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   });
 
   res.status(201).json(
-    new ApiResponse(true, "User registered successfully", user)
+    new ApiResponse(
+      true,
+      "Registration started. Enter the OTP sent to your email.",
+      user
+    )
   );
 });
+
+export const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
+  const result = await verifyEmailOtpService(req.body.email, req.body.otp);
+
+  res.status(200).json(
+    new ApiResponse(true, "Email verified successfully. You can now login.", result)
+  );
+});
+
+export const resendVerificationOtp = asyncHandler(
+  async (req: Request, res: Response) => {
+    await resendEmailVerificationOtpService(req.body.email);
+
+    res.status(200).json(
+      new ApiResponse(
+        true,
+        "If the account is awaiting verification, a new OTP has been sent."
+      )
+    );
+  }
+);
 
 // Login
 export const login = asyncHandler(async (req: Request, res: Response) => {

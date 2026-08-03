@@ -68,10 +68,13 @@ function Register() {
 
       toast.success(
         response.data.message ||
-          "Registration successful! Please login."
+          "Enter the OTP sent to your email."
       );
 
-      navigate("/login");
+      navigate(
+        `/verify-email?email=${encodeURIComponent(payload.email)}`,
+        { state: { registrationStarted: true } }
+      );
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         const backendData = error.response?.data as

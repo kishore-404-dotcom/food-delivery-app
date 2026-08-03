@@ -7,6 +7,8 @@ import {
   changePassword,
   forgotPassword,
   resetPassword,
+  resendVerificationOtp,
+  verifyEmail,
 } from "../controllers/authController";
 import { protect } from "../middleware/authMiddleware";
 import {
@@ -16,6 +18,8 @@ import {
   changePasswordValidator,
   forgotPasswordValidator,
   resetPasswordValidator,
+  resendVerificationOtpValidator,
+  verifyEmailValidator,
 } from "../validators/authValidator";
 
 import validateRequest from "../middleware/validateRequest";
@@ -23,6 +27,7 @@ import {
   authLimiter,
   passwordResetLimiter,
   registerLimiter,
+  emailVerificationLimiter,
 } from "../middleware/rateLimiter";
 
 const router = express.Router();
@@ -32,6 +37,22 @@ router.post("/register", registerValidator, validateRequest, registerLimiter, re
 
 // Login user
 router.post("/login", loginValidator, validateRequest, authLimiter, login);
+
+router.post(
+  "/verify-email",
+  emailVerificationLimiter,
+  verifyEmailValidator,
+  validateRequest,
+  verifyEmail
+);
+
+router.post(
+  "/resend-verification-otp",
+  emailVerificationLimiter,
+  resendVerificationOtpValidator,
+  validateRequest,
+  resendVerificationOtp
+);
 
 router.post(
   "/forgot-password",

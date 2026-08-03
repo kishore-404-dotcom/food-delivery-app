@@ -4,6 +4,7 @@ export interface IUser {
   email: string;
   phone: string;
   role: "customer" | "restaurant_owner" | "admin";
+  emailVerified?: boolean;
   restaurantStatus?: "pending" | "approved" | "rejected";
   createdAt?: string;
   updatedAt?: string;

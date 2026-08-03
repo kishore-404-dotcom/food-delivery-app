@@ -8,7 +8,10 @@ import { ApiResponse } from "../utils/apiResponse";
 
 export const getRestaurantOwners = asyncHandler(
   async (_req: AuthRequest, res: Response) => {
-    const owners = await User.find({ role: "restaurant_owner" })
+    const owners = await User.find({
+      role: "restaurant_owner",
+      emailVerified: true,
+    })
       .select("-password")
       .sort({ createdAt: -1 });
 
@@ -30,6 +33,7 @@ export const updateRestaurantOwnerStatus = asyncHandler(
     const owner = await User.findOne({
       _id: req.params.id,
       role: "restaurant_owner",
+      emailVerified: true,
     });
 
     if (!owner) {
