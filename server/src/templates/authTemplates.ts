@@ -32,18 +32,3 @@ export const forgotPasswordTemplate = (
       </div>
     `;
 };
-
-export const emailVerificationOtpTemplate = (otp: string) => {
-  return `
-      <div style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.6;">
-        <h1 style="color: #f97316;">Verify your Foodie email</h1>
-        <p>Enter this one-time password on the Foodie verification page:</p>
-        <p style="font-size: 32px; font-weight: bold; letter-spacing: 8px; margin: 24px 0;">
-          ${otp}
-        </p>
-        <p>This OTP expires in 10 minutes and can only be used once.</p>
-        <p>Foodie will never ask you to send this OTP by phone or text message.</p>
-        <p>If you did not create this account, you can safely ignore this email.</p>
-      </div>
-    `;
-};

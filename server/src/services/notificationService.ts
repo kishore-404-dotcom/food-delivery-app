@@ -4,7 +4,6 @@ import Notification from "../models/notification";
 import {
   welcomeTemplate,
   forgotPasswordTemplate,
-  emailVerificationOtpTemplate,
 } from "../templates/authTemplates";
 
 import {
@@ -24,14 +23,6 @@ export const sendWelcomeEmail = async (email: string, name: string) => {
 
 export const sendForgotPasswordEmail = async (email: string, link: string) => {
   await sendMailService(email, "Reset Password", forgotPasswordTemplate(link));
-};
-
-export const sendEmailVerificationOtp = async (email: string, otp: string) => {
-  await sendMailService(
-    email,
-    "Verify your Foodie email",
-    emailVerificationOtpTemplate(otp)
-  );
 };
 
 export const sendOrderPlacedEmail = async (email: string, orderId: string) => {

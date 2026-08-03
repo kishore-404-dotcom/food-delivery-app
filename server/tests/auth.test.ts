@@ -50,20 +50,4 @@ describe("Auth API", () => {
     expect(response.statusCode).toBe(400);
   });
 
-  it("rejects malformed email verification OTPs", async () => {
-    const response = await request(app)
-      .post("/api/auth/verify-email")
-      .send({ email: "customer@example.com", otp: "12ab" });
-
-    expect(response.statusCode).toBe(400);
-  });
-
-  it("validates resend verification email input", async () => {
-    const response = await request(app)
-      .post("/api/auth/resend-verification-otp")
-      .send({ email: "not-an-email" });
-
-    expect(response.statusCode).toBe(400);
-  });
-
 });

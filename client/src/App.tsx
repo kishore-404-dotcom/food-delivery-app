@@ -17,7 +17,6 @@ const CustomerDashboard = lazy(
 );
 const Login = lazy(() => import("./pages/login/Login"));
 const Register = lazy(() => import("./pages/register/Register"));
-const VerifyEmail = lazy(() => import("./pages/verifyEmail/VerifyEmail"));
 const ForgotPassword = lazy(
   () => import("./pages/forgotPassword/ForgotPassword")
 );
@@ -67,7 +66,6 @@ function App() {
             {/* Registration and login are the only public routes. */}
             <Route element={<GuestRoute />}>
               <Route path="/register" element={<Register />} />
-              <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/login" element={<Login />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
             </Route>
