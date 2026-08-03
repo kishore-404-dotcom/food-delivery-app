@@ -68,7 +68,9 @@ export const validateEnvironment = (): void => {
       "EMAIL_USER",
       "EMAIL_PASSWORD",
     ]);
-    validateOptionalGroup("Brevo", ["BREVO_API_KEY", "EMAIL_FROM"]);
+    if (BREVO_API_KEY) {
+      readRequired("EMAIL_FROM");
+    }
 
     const frontend = new URL(FRONTEND_URL);
     if (frontend.protocol !== "https:") {
